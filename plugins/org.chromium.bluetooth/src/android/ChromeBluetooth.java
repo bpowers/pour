@@ -57,6 +57,8 @@ public class ChromeBluetooth extends CordovaPlugin {
     BluetoothProfile.GATT, BluetoothProfile.GATT_SERVER
   };
 
+  private Map<String, CallbackContext> outstandingCallbacks =
+    new ConcurrentHashMap<String, CallbackContext>();
   private Map<String, ScanResult> knownLeScanResults =
     new ConcurrentHashMap<String, ScanResult>();
   private Map<String, BluetoothDevice> knownBluetoothDevices =
@@ -316,16 +318,22 @@ public class ChromeBluetooth extends CordovaPlugin {
 
   private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
       public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-        Log.e(LOG_TAG, "CONNECTION STATE CHANGE");
+        CallbackContext callbackContext = outstandingCallbacks.remove(gatt.getDevice().getAddress());
 
         switch (newState) {
         case BluetoothProfile.STATE_DISCONNECTED:
+          if (callbackContext != null) {
+            callbackContext.error("Connection failed");
+          }
           break;
         case BluetoothProfile.STATE_CONNECTING:
           break;
         case BluetoothProfile.STATE_CONNECTED:
           Log.e(LOG_TAG, "CONNECTION STATE CONNECTED");
           gatt.discoverServices();
+          if (callbackContext != null) {
+            callbackContext.success();
+          }
           break;
         case BluetoothProfile.STATE_DISCONNECTING:
           break;
@@ -375,6 +383,10 @@ public class ChromeBluetooth extends CordovaPlugin {
       callbackContext.error("Unknown device " + deviceAddress);
       return;
     }
+
+    // TODO(bp) check is connectable?
+
+    outstandingCallbacks.put(deviceAddress, callbackContext);
 
     Log.e(LOG_TAG, "connecting");
     device.connectGatt(this.cordova.getActivity().getApplicationContext(), true, gattCallback);
