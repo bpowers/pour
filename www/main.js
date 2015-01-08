@@ -21,7 +21,7 @@ var main = (function() {
 
     PourApp.prototype.logError = function() {
         if (chrome.runtime.lastError)
-            console.log('bluetooth call failed: ' + chrome.runtime.lastError);
+            console.log('bluetooth call failed: ' + chrome.runtime.lastError.message);
     };
 
     PourApp.prototype.logDiscovery = function() {
@@ -46,7 +46,7 @@ var main = (function() {
         console.log('writing tare');
         chrome.bluetoothLowEnergy.writeCharacteristicValue(fullID, buf, function() {
             if (chrome.runtime.lastError)
-                console.log(chrome.runtime.lastError);
+                console.log(chrome.runtime.lastError.message);
             console.log('write callback');
             console.log(arguments);
         });
@@ -62,13 +62,18 @@ var main = (function() {
         var self = this;
         var notificationsSet = function() {
             if (chrome.runtime.lastError)
-                console.log('failed enabling characteristic notifications: ' + chrome.runtime.lastError);
+                console.log('failed enabling characteristic notifications: ' + chrome.runtime.lastError.message);
 
             self.initialized = true;
             self.ready();
         }
 
         var allCharacteristics = function(characteristics) {
+            if (chrome.runtime.lastError) {
+                console.log('failed listing characteristics: ' + chrome.runtime.lastError.message);
+                return;
+            }
+
             var found = false;
             for (var i = 0; i < characteristics.length; i++) {
                 if (characteristics[i].uuid == SCALE_CHARACTERISTIC_UUID) {
@@ -77,6 +82,7 @@ var main = (function() {
                     break;
                 }
             }
+
             if (found) {
                 chrome.bluetoothLowEnergy.startCharacteristicNotifications(characteristic.instanceId, self.notificationsSet);
             } else {
@@ -86,7 +92,7 @@ var main = (function() {
         }
         chrome.bluetoothLowEnergy.getCharacteristics(this.serviceId, allCharacteristics);
 
-        document.getElementById('device-status').innerHTML += ' ' + service.uuid;
+        document.getElementById('device-status').innerHTML += ' CONN';
     };
 
     PourApp.prototype.init = function() {
