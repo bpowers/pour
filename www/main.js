@@ -45,7 +45,7 @@ var main = (function() {
 
             console.log('discovered: ' + device.name + ' at ' + device.address);
             self.deviceMap_[device.address] = device;
-            document.getElementById('device-status').innerHTML = 'discovered: ' + device.name + ' at ' + device.address;
+            document.getElementById('device-status').innerHTML = 'discovered: ' + device.name;
             var discoveryHandler = function() {
                 if (chrome.runtime.lastError) {
                     console.log('Failed to ' + (self.discovering_ ? 'stop' : 'start') + ' discovery ' +

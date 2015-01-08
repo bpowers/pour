@@ -32,6 +32,10 @@ import org.uribeacon.scan.compat.ScanSettings;
 import android.annotation.TargetApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothGatt;
+import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothGattCharacteristic;
+import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
@@ -53,9 +57,12 @@ public class ChromeBluetooth extends CordovaPlugin {
     BluetoothProfile.GATT, BluetoothProfile.GATT_SERVER
   };
 
-  private Map<String, ScanResult> knownLeScanResults = new HashMap<String, ScanResult>();
+  private Map<String, ScanResult> knownLeScanResults =
+    new ConcurrentHashMap<String, ScanResult>();
   private Map<String, BluetoothDevice> knownBluetoothDevices =
       new ConcurrentHashMap<String, BluetoothDevice>();
+  private Map<String, BluetoothGatt> connectedBluetoothGatts =
+      new ConcurrentHashMap<String, BluetoothGatt>();
   private Set<String> activeDevices = new HashSet<String>();
 
   private BluetoothManager bluetoothManager;
@@ -81,7 +88,10 @@ public class ChromeBluetooth extends CordovaPlugin {
       stopDiscovery(callbackContext);
     } else if ("registerBluetoothEvents".equals(action)) {
       registerBluetoothEvents(callbackContext);
+    } else if ("connect".equals(action)) {
+      connect(args, callbackContext);
     } else {
+      Log.e(LOG_TAG, "Unimplemented: " + action);
       return false;
     }
     return true;
@@ -125,6 +135,15 @@ public class ChromeBluetooth extends CordovaPlugin {
   @Nullable
   BluetoothDevice getKnownBluetoothDevice(String deviceAddress) {
     return knownBluetoothDevices.get(deviceAddress);
+  }
+
+  @Nullable
+  private BluetoothDevice getKnownDevice(String deviceAddress) {
+    ScanResult leResult = getKnownLeScanResults(deviceAddress);
+    if (leResult != null) {
+      return leResult.getDevice();
+    }
+    return getKnownBluetoothDevice(deviceAddress);
   }
 
   private JSONObject getAdapterStateInfo() throws JSONException {
@@ -293,6 +312,72 @@ public class ChromeBluetooth extends CordovaPlugin {
 
     callbackContext.success();
     sendAdapterStateChangedEvent();
+  }
+
+  private final BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
+      public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+        Log.e(LOG_TAG, "CONNECTION STATE CHANGE");
+
+        switch (newState) {
+        case BluetoothProfile.STATE_DISCONNECTED:
+          break;
+        case BluetoothProfile.STATE_CONNECTING:
+          break;
+        case BluetoothProfile.STATE_CONNECTED:
+          Log.e(LOG_TAG, "CONNECTION STATE CONNECTED");
+          gatt.discoverServices();
+          break;
+        case BluetoothProfile.STATE_DISCONNECTING:
+          break;
+        default:
+          Log.e(LOG_TAG, "Error unknown connection state " + newState);
+        }
+      }
+
+      public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+        Log.e(LOG_TAG, "SERVICES DISCOVERED");
+      }
+
+      public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        Log.e(LOG_TAG, "CHARACTERISTIC READ");
+      }
+
+      public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        Log.e(LOG_TAG, "CHARACTERISTIC WRITE");
+      }
+
+      public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        Log.e(LOG_TAG, "DESCRIPTOR READ");
+      }
+
+      public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        Log.e(LOG_TAG, "DESCRIPTOR WRITE");
+      }
+
+      public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+        Log.e(LOG_TAG, "READ REMOTE RSSI");
+      }
+
+      public void onReliableWriteCompleted(BluetoothGatt gatt, int status) {
+        Log.e(LOG_TAG, "RELIABLE WRITE COMPLETED");
+      }
+
+      public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        Log.e(LOG_TAG, "CHARACTERISTIC CHANGED");
+      }
+    };
+
+  private void connect(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+    String deviceAddress = args.getString(0);
+    BluetoothDevice device = getKnownDevice(deviceAddress);
+
+    if (device == null) {
+      callbackContext.error("Unknown device " + deviceAddress);
+      return;
+    }
+
+    Log.e(LOG_TAG, "connecting");
+    device.connectGatt(this.cordova.getActivity().getApplicationContext(), true, gattCallback);
   }
 
   private void registerBluetoothEvents(CallbackContext callbackContext) {
