@@ -1,0 +1,15 @@
+{
+    "version": "1.1.0",
+    "name": "org.chromium.bluetooth",
+    "cordova_name": "Chrome Apps Bluetooth API",
+    "platforms": [
+        "android",
+        "ios"
+    ],
+    "engines": [
+        {
+            "name": "cordova",
+            "version": ">=3.0.0"
+        }
+    ]
+}

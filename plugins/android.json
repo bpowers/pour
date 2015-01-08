@@ -1,0 +1,175 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "files": {
+            "AndroidManifest.xml": {
+                "parents": {
+                    "/manifest": [
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.WAKE_LOCK\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.BLUETOOTH\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.BLUETOOTH_ADMIN\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-feature android:name=\"android.hardware.bluetooth_le\" android:required=\"true\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\"21\" />",
+                            "count": 1
+                        }
+                    ],
+                    "/manifest/application": [
+                        {
+                            "xml": "<service android:exported=\"false\" android:name=\"org.uribeacon.scan.compat.ScanWakefulService\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<receiver android:name=\"org.uribeacon.scan.compat.ScanWakefulBroadcastReceiver\" />",
+                            "count": 1
+                        }
+                    ],
+                    "/*": [
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
+                            "count": 1
+                        }
+                    ]
+                }
+            },
+            "res/xml/config.xml": {
+                "parents": {
+                    "/widget": [
+                        {
+                            "xml": "<feature name=\"ChromeBluetooth\"><param name=\"android-package\" value=\"org.chromium.ChromeBluetooth\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeStorage\"><param name=\"android-package\" value=\"org.chromium.ChromeStorage\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeAppWindow\"><param name=\"android-package\" value=\"org.chromium.ChromeAppWindow\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeBootstrap\"><param name=\"android-package\" value=\"org.chromium.ChromeBootstrap\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeExtensionURLs\"><param name=\"android-package\" value=\"org.chromium.ChromeExtensionURLs\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<access origin=\"chrome-extension://*\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<preference name=\"DisallowOverscroll\" value=\"true\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeI18n\"><param name=\"android-package\" value=\"org.chromium.ChromeI18n\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeNavigation\"><param name=\"android-package\" value=\"org.chromium.ChromeNavigation\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        }
+                    ],
+                    "/*": [
+                        {
+                            "xml": "<preference name=\"webView\" value=\"org.apache.cordova.engine.crosswalk.XWalkCordovaWebView\" />",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"File\"><param name=\"android-package\" value=\"org.apache.cordova.file.FileUtils\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"InAppBrowser\"><param name=\"android-package\" value=\"org.apache.cordova.inappbrowser.InAppBrowser\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"NetworkStatus\"><param name=\"android-package\" value=\"org.apache.cordova.networkinformation.NetworkManager\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"StatusBar\"><param name=\"android-package\" value=\"org.apache.cordova.statusbar.StatusBar\" /><param name=\"onload\" value=\"true\" /></feature>",
+                            "count": 1
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "installed_plugins": {
+        "android.support.v4": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.bluetooth": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.bluetoothLowEnergy": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.apache.cordova.engine.crosswalk": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.apache.cordova.file": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.apache.cordova.inappbrowser": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.apache.cordova.network-information": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.apache.cordova.statusbar": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.bootstrap": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.i18n": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.navigation": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.polyfill.blob_constructor": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.polyfill.customevent": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.polyfill.xhr_features": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        }
+    },
+    "dependent_plugins": {
+        "org.chromium.common": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.storage": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.runtime": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        }
+    }
+}

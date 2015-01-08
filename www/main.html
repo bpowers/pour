@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pour</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script src="ui.js"></script>
+  <script src="main.js"></script>
+</head>
+<body>
+  <div id="header">
+    <img src="pour_128.png" width="64" height="64" alt="pour icon">
+    <h1>Pour</h1>
+    <div id="adapter-status">
+      <ul>
+        <li>name: <span id="adapter-name"></span></li>
+        <li>addr: <span id="adapter-address"></span></li>
+      </ul>
+    </div>
+    <hr>
+    <div id="device-selection-div">
+      <button type="button" id="discovery-toggle-button">
+        start discovery
+      </button>
+    </div>
+  </div>
+  <div id="device-status">
+    Not connected.
+  </div>
+</body>
+</html>

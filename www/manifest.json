@@ -1,0 +1,22 @@
+{
+    "name": "Pour",
+    "description": "make exceptional coffee",
+    "author": "Bobby Powers <bobbypowers@gmail.com>",
+    "version": "0.1",
+    "minimum_chrome_version": "37",
+    "icons": {
+        "16": "pour_16.png",
+        "48": "pour_48.png",
+        "128": "pour_128.png",
+        "256": "pour_256.png",
+        "512": "pour_512.png"
+    },
+    "app": {
+        "background": {
+            "scripts": ["background.js"]
+        }
+    },
+    "bluetooth": {
+        "low_energy": true
+    }
+}
