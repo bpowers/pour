@@ -2,6 +2,8 @@ var main = (function() {
     var SCALE_SERVICE_UUID = '00001820-0000-1000-8000-00805f9b34fb';
     var SCALE_CHARACTERISTIC_UUID = '00002a80-0000-1000-8000-00805f9b34fb';
 
+    var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
+
     function PourApp() {
         // A mapping from device addresses to device.
         this.deviceMap_ = {};
@@ -23,9 +25,17 @@ var main = (function() {
     PourApp.prototype.ready = function() {
         var fullID = this.deviceAddress + '/' + SCALE_CHARACTERISTIC_UUID;
 
-        console.log('ready - asking for weight');
-        // get weight
-        chrome.bluetoothLowEnergy.writeCharacteristicValue(fullID, new ArrayBuffer(), function() {
+        console.log('ready - setting tare');
+
+        var buf = new ArrayBuffer(32);
+        var bytes = new Uint8Array(buf);
+
+        var i;
+        for (i = 0; i < TARE_PACKET.length; i++)
+            bytes[i] = TARE_PACKET[i] & 0xff;
+
+        console.log('writing tare');
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(fullID, buf, function() {
             if (chrome.runtime.lastError)
                 console.log(chrome.runtime.lastError);
             console.log('write callback');
@@ -73,9 +83,21 @@ var main = (function() {
 
             chrome.bluetoothLowEnergy.onServiceAdded.addListener(function(service) {
                 if (service.uuid === SCALE_SERVICE_UUID) {
-                    self.initialized = true;
-                    self.ready();
-                    console.log('READY TO ASK FOR WEIGHT');
+                    chrome.bluetoothLowEnergy.startCharacteristicNotifications(
+                        self.deviceAddress + '/' + SCALE_CHARACTERISTIC_UUID,
+                        function () {
+                            if (chrome.runtime.lastError) {
+                                console.log(
+                                    'Failed to enable notifications: ' +
+                                        chrome.runtime.lastError.message);
+                                return;
+                            }
+
+                            console.log('Scale notifications enabled!');
+                            self.initialized = true;
+                            self.ready();
+                        });
+
                     document.getElementById('device-status').innerHTML += ' ' + service.uuid;
                 }
             });
