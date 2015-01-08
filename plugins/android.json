@@ -118,9 +118,6 @@
         }
     },
     "installed_plugins": {
-        "android.support.v4": {
-            "PACKAGE_NAME": "io.powers.Pour"
-        },
         "org.chromium.bluetooth": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
@@ -163,6 +160,9 @@
     },
     "dependent_plugins": {
         "org.chromium.common": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "android.support.v4": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
         "org.chromium.storage": {
