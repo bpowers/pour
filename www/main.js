@@ -5,33 +5,42 @@ var main = (function() {
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
 
     function PourApp() {
-        // A mapping from device addresses to device.
-        this.deviceMap_ = {};
-
         this.deviceAddress = null;
-
+        this.serviceId = null;
+        this.characteristicId = null;
         this.initialized = false;
-
-        this.discovering_ = false;
+        this.discovering = false;
     }
 
     PourApp.prototype.updateDiscoveryToggleState = function(discovering) {
-        if (this.discovering_ !== discovering) {
-            this.discovering_ = discovering;
-            UI.getInstance().setDiscoveryToggleState(this.discovering_);
+        if (this.discovering !== discovering) {
+            this.discovering = discovering;
+            UI.getInstance().setDiscoveryToggleState(this.discovering);
         }
     };
+
+    PourApp.prototype.logError = function() {
+        if (chrome.runtime.lastError)
+            console.log('bluetooth call failed: ' + chrome.runtime.lastError);
+    };
+
+    PourApp.prototype.logDiscovery = function() {
+        if (chrome.runtime.lastError)
+            console.log('Failed to ' + (self.discovering ? 'stop' : 'start') +
+                        ' discovery ' + chromium.runtime.lastError.message);
+    };
+
 
     PourApp.prototype.ready = function() {
         var fullID = this.deviceAddress + '/' + SCALE_CHARACTERISTIC_UUID;
 
         console.log('ready - setting tare');
+        document.getElementById('device-status').innerHTML += ' RDY';
 
         var buf = new ArrayBuffer(32);
         var bytes = new Uint8Array(buf);
 
-        var i;
-        for (i = 0; i < TARE_PACKET.length; i++)
+        for (var i = 0; i < TARE_PACKET.length; i++)
             bytes[i] = TARE_PACKET[i] & 0xff;
 
         console.log('writing tare');
@@ -43,12 +52,46 @@ var main = (function() {
         });
     };
 
+    PourApp.prototype.serviceAdded = function(service) {
+        if (service.uuid !== SCALE_SERVICE_UUID)
+            return;
+
+        this.serviceId = service.instanceId;
+        console.log('service added!');
+
+        var self = this;
+        var notificationsSet = function() {
+            if (chrome.runtime.lastError)
+                console.log('failed enabling characteristic notifications: ' + chrome.runtime.lastError);
+
+            self.initialized = true;
+            self.ready();
+        }
+
+        var allCharacteristics = function(characteristics) {
+            var found = false;
+            for (var i = 0; i < characteristics.length; i++) {
+                if (characteristics[i].uuid == SCALE_CHARACTERISTIC_UUID) {
+                    self.characteristicId = characteristics[i].uuid;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                chrome.bluetoothLowEnergy.startCharacteristicNotifications(characteristic.instanceId, self.notificationsSet);
+            } else {
+                console.log('scale doesnt have required characteristic');
+                console.log(characteristics);
+            }
+        }
+        chrome.bluetoothLowEnergy.getCharacteristics(this.serviceId, allCharacteristics);
+
+        document.getElementById('device-status').innerHTML += ' ' + service.uuid;
+    };
+
     PourApp.prototype.init = function() {
-        // Store the |this| to be used by API callbacks below.
         var self = this;
 
-        // Request information about the local Bluetooth adapter to be displayed in
-        // the UI.
         var updateAdapterState = function(adapterState) {
             UI.getInstance().setAdapterState(adapterState.address, adapterState.name);
             self.updateDiscoveryToggleState(adapterState.discovering);
@@ -70,63 +113,22 @@ var main = (function() {
 
             self.deviceAddress = device.address;
 
-            console.log('discovered: ' + device.name + ' at ' + device.address);
-            self.deviceMap_[device.address] = device;
             document.getElementById('device-status').innerHTML = 'discovered: ' + device.name;
-            var discoveryHandler = function() {
-                if (chrome.runtime.lastError) {
-                    console.log('Failed to ' + (self.discovering_ ? 'stop' : 'start') + ' discovery ' +
-                                chromium.runtime.lastError.message);
-                }
-            };
-            chrome.bluetooth.stopDiscovery(discoveryHandler);
 
-            chrome.bluetoothLowEnergy.onServiceAdded.addListener(function(service) {
-                if (service.uuid === SCALE_SERVICE_UUID) {
-                    chrome.bluetoothLowEnergy.startCharacteristicNotifications(
-                        self.deviceAddress + '/' + SCALE_CHARACTERISTIC_UUID,
-                        function () {
-                            if (chrome.runtime.lastError) {
-                                console.log(
-                                    'Failed to enable notifications: ' +
-                                        chrome.runtime.lastError.message);
-                                return;
-                            }
-
-                            console.log('Scale notifications enabled!');
-                            self.initialized = true;
-                            self.ready();
-                        });
-
-                    document.getElementById('device-status').innerHTML += ' ' + service.uuid;
-                }
-            });
-            chrome.bluetoothLowEnergy.connect(device.address, function () {
-                if (chrome.runtime.lastError) {
-                    console.log('Failed to connect: ' + chrome.runtime.lastError.message);
-                    return;
-                }
-
-                document.getElementById('device-status').innerHTML += ' c';
-            });
+            chrome.bluetooth.stopDiscovery(self.logDiscovery.bind(self));
+            chrome.bluetoothLowEnergy.connect(device.address, self.logError);
         }
 
         chrome.bluetooth.onAdapterStateChanged.addListener(updateAdapterState);
         chrome.bluetooth.onDeviceAdded.addListener(deviceAdded);
+        chrome.bluetoothLowEnergy.onServiceAdded.addListener(this.serviceAdded.bind(this));
 
         // Set up discovery toggle button handler
         UI.getInstance().setDiscoveryToggleHandler(function() {
-            var discoveryHandler = function() {
-                if (chrome.runtime.lastError) {
-                    console.log('Failed to ' + (self.discovering_ ? 'stop' : 'start') + ' discovery ' +
-                                chromium.runtime.lastError.message);
-                }
-            };
-            if (self.discovering_) {
-                chrome.bluetooth.stopDiscovery(discoveryHandler);
-            } else {
-                chrome.bluetooth.startDiscovery(discoveryHandler);
-            }
+            if (!self.discovering)
+                chrome.bluetooth.startDiscovery(self.logDiscovery.bind(self));
+            else
+                chrome.bluetooth.stopDiscovery(self.logDiscovery.bind(self));
         });
     };
 
