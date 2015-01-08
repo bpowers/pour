@@ -59,7 +59,7 @@ var main = (function() {
                     return;
                 }
 
-                document.getElementById('no-devices-error').innerHTML += ' CONNECTED';
+                document.getElementById('device-status').innerHTML += ' CONNECTED';
             });
         }
 
