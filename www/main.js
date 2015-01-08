@@ -57,7 +57,7 @@ var main = (function() {
             return;
 
         this.serviceId = service.instanceId;
-        console.log('service added!');
+        console.log('service added: ' + this.serviceId);
 
         var self = this;
         var notificationsSet = function() {
@@ -69,7 +69,6 @@ var main = (function() {
         }
 
         var allCharacteristics = function(characteristics) {
-            console.log('all chars');
             if (chrome.runtime.lastError) {
                 console.log('failed listing characteristics: ' + chrome.runtime.lastError.message);
                 return;

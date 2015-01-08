@@ -96,6 +96,8 @@ public class ChromeBluetooth extends CordovaPlugin {
       registerBluetoothLowEnergyEvents(callbackContext);
     } else if ("connect".equals(action)) {
       connect(args, callbackContext);
+    } else if ("getCharacteristics".equals(action)) {
+      getCharacteristics(args, callbackContext);
     } else {
       Log.e(LOG_TAG, "Unimplemented: " + action);
       return false;
@@ -234,13 +236,69 @@ public class ChromeBluetooth extends CordovaPlugin {
     return deviceInfo;
   }
 
-  private JSONObject getGattServiceInfo(BluetoothGattService gattService) throws JSONException {
+  @Nullable
+  private BluetoothGatt getGatt(String instanceId) {
+    String[] idParts = instanceId.split("/");
+    if (idParts.length != 2) {
+      return null;
+    }
+
+    return connectedBluetoothGatts.get(idParts[0]);
+  }
+
+  @Nullable
+  private BluetoothGattService getGattService(String instanceId) {
+    String[] idParts = instanceId.split("/");
+    if (idParts.length != 2) {
+      Log.e(LOG_TAG, "bad split");
+      return null;
+    }
+
+    BluetoothGatt gatt = connectedBluetoothGatts.get(idParts[0]);
+    if (gatt == null) {
+      Log.e(LOG_TAG, "no gatt");
+      return null;
+    }
+
+    for (BluetoothGattService gattService: gatt.getServices()) {
+      if (gattService.getUuid().toString().equals(idParts[1])) {
+        return gattService;
+      }
+    }
+    return null;
+  }
+
+  private String getServiceIdFromService(BluetoothGatt gatt, BluetoothGattService gattService) {
+    return gatt.getDevice().getAddress() + "/" + gattService.getUuid();
+  }
+
+  private String getCharacteristicIdFromCharacteristic(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+    return gatt.getDevice().getAddress() + "/" + characteristic.getService().getUuid() + "/" + characteristic.getUuid();
+  }
+
+  private JSONObject getGattServiceInfo(BluetoothGatt gatt, BluetoothGattService gattService) throws JSONException {
     JSONObject serviceInfo = new JSONObject();
+    serviceInfo.put("deviceAddress", gatt.getDevice().getAddress());
     serviceInfo.put("uuid", gattService.getUuid());
     serviceInfo.put("id", gattService.getInstanceId());
     serviceInfo.put("type", gattService.getType());
+    serviceInfo.put("instanceId", getServiceIdFromService(gatt, gattService));
 
     return serviceInfo;
+  }
+
+  private JSONObject getCharacteristicInfo(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) throws JSONException {
+    JSONObject result = new JSONObject();
+
+    JSONObject serviceInfo = getGattServiceInfo(gatt, characteristic.getService());
+    String characteristicId = getCharacteristicIdFromCharacteristic(gatt, characteristic);
+
+    result.put("uuid", characteristic.getUuid());
+    result.put("service", serviceInfo);
+    result.put("instanceId", characteristicId);
+    // TODO(bp) add properties
+
+    return result;
   }
 
   // Note: If the device both discovered by LeScanner and regular scanner, LeDevice
@@ -270,6 +328,24 @@ public class ChromeBluetooth extends CordovaPlugin {
 
     for (ScanResult result: knownLeScanResults.values()) {
       results.put(getLeDeviceInfo(result));
+    }
+
+    callbackContext.success(results);
+  }
+
+  private void getCharacteristics(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+    String serviceId = args.getString(0);
+    JSONArray results = new JSONArray();
+
+    BluetoothGatt gatt = getGatt(serviceId);
+    BluetoothGattService service = getGattService(serviceId);
+    if (service == null) {
+      callbackContext.error("Didn't find serviceId");
+      return;
+    }
+
+    for (BluetoothGattCharacteristic characteristic: service.getCharacteristics()) {
+      results.put(getCharacteristicInfo(gatt, characteristic));
     }
 
     callbackContext.success(results);
@@ -400,8 +476,8 @@ public class ChromeBluetooth extends CordovaPlugin {
 
     outstandingCallbacks.put(deviceAddress, callbackContext);
 
-    Log.e(LOG_TAG, "connecting");
-    device.connectGatt(this.cordova.getActivity().getApplicationContext(), true, gattCallback);
+    BluetoothGatt gatt = device.connectGatt(this.cordova.getActivity().getApplicationContext(), true, gattCallback);
+    connectedBluetoothGatts.put(deviceAddress, gatt);
   }
 
   private void registerBluetoothEvents(CallbackContext callbackContext) {
@@ -475,8 +551,7 @@ public class ChromeBluetooth extends CordovaPlugin {
     }
 
     try {
-      JSONObject result = getGattServiceInfo(service);
-      result.put("deviceAddress", gatt.getDevice().getAddress());
+      JSONObject result = getGattServiceInfo(gatt, service);
 
       bluetoothLowEnergyEventsCallback.sendPluginResult(
           getMultipartEventsResult("onServiceAdded", result));
