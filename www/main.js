@@ -35,7 +35,7 @@ var main = (function() {
         console.log('ready - setting tare');
         document.getElementById('device-status').innerHTML += ' RDY';
 
-        var buf = new ArrayBuffer(32);
+        var buf = new ArrayBuffer(16);
         var bytes = new Uint8Array(buf);
 
         for (var i = 0; i < TARE_PACKET.length; i++)
