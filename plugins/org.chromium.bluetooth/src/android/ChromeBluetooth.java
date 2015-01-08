@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.cordova.CallbackContext;
@@ -98,6 +99,8 @@ public class ChromeBluetooth extends CordovaPlugin {
       connect(args, callbackContext);
     } else if ("getCharacteristics".equals(action)) {
       getCharacteristics(args, callbackContext);
+    } else if ("writeCharacteristicValue".equals(action)) {
+      writeCharacteristicValue(args, callbackContext);
     } else {
       Log.e(LOG_TAG, "Unimplemented: " + action);
       return false;
@@ -239,7 +242,7 @@ public class ChromeBluetooth extends CordovaPlugin {
   @Nullable
   private BluetoothGatt getGatt(String instanceId) {
     String[] idParts = instanceId.split("/");
-    if (idParts.length != 2) {
+    if (idParts.length < 1) {
       return null;
     }
 
@@ -260,9 +263,35 @@ public class ChromeBluetooth extends CordovaPlugin {
       return null;
     }
 
+    UUID serviceUuid = UUID.fromString(idParts[1]);
+
     for (BluetoothGattService gattService: gatt.getServices()) {
-      if (gattService.getUuid().toString().equals(idParts[1])) {
+      if (gattService.getUuid().equals(serviceUuid)) {
         return gattService;
+      }
+    }
+    return null;
+  }
+
+  @Nullable
+  private BluetoothGattCharacteristic getCharacteristic(String instanceId) {
+    String[] idParts = instanceId.split("/");
+    if (idParts.length != 3) {
+      Log.e(LOG_TAG, "bad split");
+      return null;
+    }
+
+    BluetoothGattService service = getGattService(idParts[0] + "/" + idParts[1]);
+    if (service == null) {
+      Log.e(LOG_TAG, "no service " + idParts[0] + "/" + idParts[1]);
+      return null;
+    }
+
+    UUID characteristicUuid = UUID.fromString(idParts[2]);
+
+    for (BluetoothGattCharacteristic characteristic: service.getCharacteristics()) {
+      if (characteristic.getUuid().equals(characteristicUuid)) {
+        return characteristic;
       }
     }
     return null;
@@ -349,6 +378,29 @@ public class ChromeBluetooth extends CordovaPlugin {
     }
 
     callbackContext.success(results);
+  }
+
+  private void writeCharacteristicValue(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+    String characteristicId = args.getString(0);
+    byte[] value = args.getArrayBuffer(1);
+
+    String[] idParts = characteristicId.split("/");
+
+    BluetoothGatt gatt = getGatt(idParts[0]);
+    BluetoothGattCharacteristic characteristic = getCharacteristic(characteristicId);
+    if (characteristic == null) {
+      callbackContext.error("Didn't find characteristicId");
+      return;
+    }
+    if (gatt == null) {
+      callbackContext.error("Didn't find gatt");
+      return;
+    }
+
+    characteristic.setValue(value);
+    gatt.writeCharacteristic(characteristic);
+
+    callbackContext.success();
   }
 
   private void startDiscovery(CallbackContext callbackContext) {
