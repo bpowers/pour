@@ -36,6 +36,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
+import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.BroadcastReceiver;
@@ -74,6 +75,7 @@ public class ChromeBluetooth extends CordovaPlugin {
   private boolean isDiscovering = false;
 
   private CallbackContext bluetoothEventsCallback;
+  private CallbackContext bluetoothLowEnergyEventsCallback;
 
   @Override
   public boolean execute(String action, CordovaArgs args, final CallbackContext callbackContext)
@@ -90,6 +92,8 @@ public class ChromeBluetooth extends CordovaPlugin {
       stopDiscovery(callbackContext);
     } else if ("registerBluetoothEvents".equals(action)) {
       registerBluetoothEvents(callbackContext);
+    } else if ("registerBluetoothLowEnergyEvents".equals(action)) {
+      registerBluetoothLowEnergyEvents(callbackContext);
     } else if ("connect".equals(action)) {
       connect(args, callbackContext);
     } else {
@@ -230,6 +234,15 @@ public class ChromeBluetooth extends CordovaPlugin {
     return deviceInfo;
   }
 
+  private JSONObject getGattServiceInfo(BluetoothGattService gattService) throws JSONException {
+    JSONObject serviceInfo = new JSONObject();
+    serviceInfo.put("uuid", gattService.getUuid());
+    serviceInfo.put("id", gattService.getInstanceId());
+    serviceInfo.put("type", gattService.getType());
+
+    return serviceInfo;
+  }
+
   // Note: If the device both discovered by LeScanner and regular scanner, LeDevice
   // info will be returned since it contains more information.
   private void getDevice(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
@@ -343,15 +356,14 @@ public class ChromeBluetooth extends CordovaPlugin {
       }
 
       public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-        Log.e(LOG_TAG, "SERVICES DISCOVERED");
-      }
+        if (status != BluetoothGatt.GATT_SUCCESS) {
+          Log.e(LOG_TAG, "Service discovery not a success.");
+          return;
+        }
 
-      public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-        Log.e(LOG_TAG, "CHARACTERISTIC READ");
-      }
-
-      public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-        Log.e(LOG_TAG, "CHARACTERISTIC WRITE");
+        for (BluetoothGattService gattService: gatt.getServices()) {
+          sendServiceAddedEvent(gatt, gattService);
+        }
       }
 
       public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
@@ -394,6 +406,10 @@ public class ChromeBluetooth extends CordovaPlugin {
 
   private void registerBluetoothEvents(CallbackContext callbackContext) {
     bluetoothEventsCallback = callbackContext;
+  }
+
+  private void registerBluetoothLowEnergyEvents(CallbackContext callbackContext) {
+    bluetoothLowEnergyEventsCallback = callbackContext;
   }
 
   private static PluginResult getMultipartEventsResult(String eventType, JSONObject info) {
@@ -449,6 +465,21 @@ public class ChromeBluetooth extends CordovaPlugin {
     try {
       bluetoothEventsCallback.sendPluginResult(
           getMultipartEventsResult("onDeviceRemoved", getBasicDeviceInfo(device)));
+    } catch (JSONException e) {
+    }
+  }
+
+  private void sendServiceAddedEvent(BluetoothGatt gatt, BluetoothGattService service) {
+    if (bluetoothLowEnergyEventsCallback == null) {
+      return;
+    }
+
+    try {
+      JSONObject result = getGattServiceInfo(service);
+      result.put("deviceAddress", gatt.getDevice().getAddress());
+
+      bluetoothLowEnergyEventsCallback.sendPluginResult(
+          getMultipartEventsResult("onServiceAdded", result));
     } catch (JSONException e) {
     }
   }

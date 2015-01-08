@@ -1,13 +1,15 @@
 var main = (function() {
-    var SCALE_UUID = '00001820-0000-1000-8000-00805f9b34fb';
+    var SCALE_SERVICE_UUID = '00001820-0000-1000-8000-00805f9b34fb';
+    var SCALE_CHARACTERISTIC_UUID = '00002a80-0000-1000-8000-00805f9b34fb';
 
     function PourApp() {
         // A mapping from device addresses to device.
         this.deviceMap_ = {};
 
-        // The currently selected service and its characteristics.
-        this.service_ = null;
-        this.chrcMap_ = {};
+        this.deviceAddress = null;
+
+        this.initialized = false;
+
         this.discovering_ = false;
     }
 
@@ -16,6 +18,19 @@ var main = (function() {
             this.discovering_ = discovering;
             UI.getInstance().setDiscoveryToggleState(this.discovering_);
         }
+    };
+
+    PourApp.prototype.ready = function() {
+        var fullID = this.deviceAddress + '/' + SCALE_CHARACTERISTIC_UUID;
+
+        console.log('ready - asking for weight');
+        // get weight
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(fullID, new ArrayBuffer(), function() {
+            if (chrome.runtime.lastError)
+                console.log(chrome.runtime.lastError);
+            console.log('write callback');
+            console.log(arguments);
+        });
     };
 
     PourApp.prototype.init = function() {
@@ -40,8 +55,10 @@ var main = (function() {
         });
 
         var deviceAdded = function(device) {
-            if (!device.uuids || device.uuids.indexOf(SCALE_UUID) < 0)
+            if (!device.uuids || device.uuids.indexOf(SCALE_SERVICE_UUID) < 0)
                 return;
+
+            self.deviceAddress = device.address;
 
             console.log('discovered: ' + device.name + ' at ' + device.address);
             self.deviceMap_[device.address] = device;
@@ -53,13 +70,22 @@ var main = (function() {
                 }
             };
             chrome.bluetooth.stopDiscovery(discoveryHandler);
+
+            chrome.bluetoothLowEnergy.onServiceAdded.addListener(function(service) {
+                if (service.uuid === SCALE_SERVICE_UUID) {
+                    self.initialized = true;
+                    self.ready();
+                    console.log('READY TO ASK FOR WEIGHT');
+                    document.getElementById('device-status').innerHTML += ' ' + service.uuid;
+                }
+            });
             chrome.bluetoothLowEnergy.connect(device.address, function () {
                 if (chrome.runtime.lastError) {
                     console.log('Failed to connect: ' + chrome.runtime.lastError.message);
                     return;
                 }
 
-                document.getElementById('device-status').innerHTML += ' CONNECTED';
+                document.getElementById('device-status').innerHTML += ' c';
             });
         }
 
@@ -79,43 +105,6 @@ var main = (function() {
             } else {
                 chrome.bluetooth.startDiscovery(discoveryHandler);
             }
-        });
-
-        // Track GATT services as they are added.
-        chrome.bluetoothLowEnergy.onServiceAdded.addListener(function (service) {
-            console.log('GOT SERVICE');
-            console.log(service);
-            // Ignore, if the service is not a Device Information service.
-            if (service.uuid != DEVICE_INFO_SERVICE_UUID)
-                return;
-
-            // Add the device of the service to the device map and update the UI.
-            console.log('New Device Information service added: ' + service.instanceId);
-            if (isKnownDevice(service.deviceAddress))
-                return;
-
-            // Looks like it's a brand new device. Get information about the device so
-            // that we can display the device name in the drop-down menu.
-            chrome.bluetooth.getDevice(service.deviceAddress, function (device) {
-                if (chrome.runtime.lastError) {
-                    console.log(chrome.runtime.lastError.message);
-                    return;
-                }
-
-                storeDevice(device.address, device);
-            });
-        });
-
-        // Track GATT services as they change.
-        chrome.bluetoothLowEnergy.onServiceChanged.addListener(function (service) {
-            // This only matters if the selected service changed.
-            if (!self.service_ || service.instanceId != self.service_.instanceId)
-                return;
-
-            console.log('The selected service has changed');
-
-            // Reselect the service to force an updated.
-            self.selectService(service);
         });
     };
 
