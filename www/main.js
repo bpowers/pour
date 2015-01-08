@@ -26,14 +26,12 @@ var main = (function() {
 
     PourApp.prototype.logDiscovery = function() {
         if (chrome.runtime.lastError)
-            console.log('Failed to ' + (self.discovering ? 'stop' : 'start') +
+            console.log('Failed to ' + (this.discovering ? 'stop' : 'start') +
                         ' discovery ' + chromium.runtime.lastError.message);
     };
 
 
     PourApp.prototype.ready = function() {
-        var fullID = this.deviceAddress + '/' + SCALE_CHARACTERISTIC_UUID;
-
         console.log('ready - setting tare');
         document.getElementById('device-status').innerHTML += ' RDY';
 
@@ -43,8 +41,10 @@ var main = (function() {
         for (var i = 0; i < TARE_PACKET.length; i++)
             bytes[i] = TARE_PACKET[i] & 0xff;
 
+        var self;
         console.log('writing tare');
-        chrome.bluetoothLowEnergy.writeCharacteristicValue(fullID, buf, function() {
+        console.log(this.characteristicId);
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(this.characteristicId, buf, function() {
             if (chrome.runtime.lastError)
                 console.log(chrome.runtime.lastError.message);
             console.log('write callback');
@@ -69,6 +69,7 @@ var main = (function() {
         }
 
         var allCharacteristics = function(characteristics) {
+            console.log('all chars');
             if (chrome.runtime.lastError) {
                 console.log('failed listing characteristics: ' + chrome.runtime.lastError.message);
                 return;
@@ -77,14 +78,15 @@ var main = (function() {
             var found = false;
             for (var i = 0; i < characteristics.length; i++) {
                 if (characteristics[i].uuid == SCALE_CHARACTERISTIC_UUID) {
-                    self.characteristicId = characteristics[i].uuid;
+                    self.characteristicId = characteristics[i].instanceId;
                     found = true;
                     break;
                 }
             }
 
             if (found) {
-                chrome.bluetoothLowEnergy.startCharacteristicNotifications(characteristic.instanceId, self.notificationsSet);
+                console.log('starting char notifications');
+                chrome.bluetoothLowEnergy.startCharacteristicNotifications(self.characteristicId, notificationsSet);
             } else {
                 console.log('scale doesnt have required characteristic');
                 console.log(characteristics);
