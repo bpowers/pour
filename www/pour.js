@@ -693,7 +693,7 @@ define('packet',['./constants'], function(constants) {
     }
 
     var encipher = function(out, input, sequenceId) {
-        for (var i = 0; i < out.length; i++) {
+        for (var i = 0; i < out.byteLength; i++) {
             var offset = (input[i] + sequenceId) & 0xff;
             out[i] = constants.TABLE1[offset];
         }
