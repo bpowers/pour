@@ -5,6 +5,12 @@
     "globals": {
         "define": false,
         "console": false,
-        "Float64Array": false
+        "Event": false,
+        "CustomEvent": false,
+        "ArrayBuffer": false,
+        "Uint8Array": false,
+        "UI": false,
+	"chrome": false
+	
     }
 }

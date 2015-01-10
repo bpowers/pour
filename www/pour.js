@@ -449,6 +449,9 @@ define('constants',[], function() {
     constants.SCALE_SERVICE_UUID = '00001820-0000-1000-8000-00805f9b34fb';
     constants.SCALE_CHARACTERISTIC_UUID = '00002a80-0000-1000-8000-00805f9b34fb';
 
+    constants.MAGIC = 0xdf;
+    constants.MAGIC2 = 0x78;
+
     // used for encoding packets going to the scale
     constants.TABLE1 = [
         0x00, 0x76, 0x84, 0x50, 0xDB, 0xE4, 0x6F, 0xB2,
@@ -521,21 +524,25 @@ define('constants',[], function() {
         0xBD, 0x58, 0x08, 0x09, 0x19, 0x1A, 0x21, 0x22,
     ];
 
+    constants.MessageType = {
+        NONE: 0,
+        STR: 1,
+        BATTERY: 2,
+        BATTERY_RESPONSE: 3,
+        WEIGHT: 4,
+        WEIGHT_RESPONSE: 5,
+        WEIGHT_RESPONSE2: 6,
+        TARE: 7,
+        SOUND: 8,
+        SOUND_ON: 9,
+        LIGHT_ON: 10,
+        FILE: 11,
+        CUSTOM: 12,
+        SIZE: 13,
+    };
+
     return constants;
 });
-
-// Copyright 2015 Bobby Powers. All rights reserved.
-// Use of this source code is governed by the MIT
-// license that can be found in the LICENSE file.
-
-define('packet',['./constants'], function(constants) {
-    
-
-    var packet = {};
-
-    return packet;
-});
-
 
 // Copyright (c) 2010 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
@@ -644,7 +651,61 @@ define('event_target',[], function() {
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-define('scale',['./constants', './event_target'], function(constants, event_target) {
+define('packet',['./constants'], function(constants) {
+    
+
+    // unsigned char packet sequence id.
+    var sequenceId = 0;
+    
+    var nextSequenceId = function() {
+        var next = sequenceId++;
+        sequenceId &= 0xff;
+    };
+
+    var getSequenceId = function() {
+        return sequenceId;
+    };
+
+    function Message(type, id, payload) {
+        this.type = type;
+        this.id = id;
+        this.payload = payload;
+        this.value = -1;
+        if (this.type === constants.MessageType.WEIGHT_RESPONSE) {
+            var value = ((payload[1] & 0xff) << 8) + (payload[0] & 0xff);
+            for (var i = 0; i < payload[4]; i++)
+                value /= 10;
+            if ((payload[6] & 0x02) == 0x02)
+                value *= -1;
+            this.value = value;
+        }
+    }
+
+    var encode = function() {
+
+    };
+
+    var decode = function() {
+
+    };
+
+    var msgType = function() {
+
+    };
+
+    return {
+        encode: encode,
+        decode: decode,
+        getSequenceId: getSequenceId,
+    };
+});
+
+
+// Copyright 2015 Bobby Powers. All rights reserved.
+// Use of this source code is governed by the MIT
+// license that can be found in the LICENSE file.
+
+define('scale',['./constants', './event_target', './packet'], function(constants, event_target, packet) {
     
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
@@ -906,11 +967,10 @@ define('app',['./scale_finder'], function(scale_finder) {
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-define('pour',['./packet', './app'], function(packet, app) {
+define('pour',['./app'], function(packet, app) {
     
 
     return {
-        packet: packet,
         App: app.App,
     };
 });
