@@ -97,6 +97,8 @@ public class ChromeBluetooth extends CordovaPlugin {
       registerBluetoothLowEnergyEvents(callbackContext);
     } else if ("connect".equals(action)) {
       connect(args, callbackContext);
+    } else if ("startCharacteristicNotifications".equals(action)) {
+      startCharacteristicNotifications(args, callbackContext);
     } else if ("getCharacteristics".equals(action)) {
       getCharacteristics(args, callbackContext);
     } else if ("writeCharacteristicValue".equals(action)) {
@@ -380,6 +382,34 @@ public class ChromeBluetooth extends CordovaPlugin {
     callbackContext.success(results);
   }
 
+  private void startCharacteristicNotifications(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+    String characteristicId = args.getString(0);
+
+    String[] idParts = characteristicId.split("/");
+
+    BluetoothGatt gatt = getGatt(idParts[0]);
+    BluetoothGattCharacteristic characteristic = getCharacteristic(characteristicId);
+    if (characteristic == null) {
+      callbackContext.error("Didn't find characteristicId");
+      return;
+    }
+    if (gatt == null) {
+      callbackContext.error("Didn't find gatt");
+      return;
+    }
+
+    if (characteristic.getDescriptors().size() == 0) {
+      Log.e(LOG_TAG, "startNotifications failed - no descriptors.");
+      callbackContext.error("startNotifications failed - no descriptors.");
+      return;
+    }
+
+    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+    gatt.writeDescriptor(descriptor);
+
+    callbackContext.success();
+  }
+
   private void writeCharacteristicValue(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
     String characteristicId = args.getString(0);
     byte[] value = args.getArrayBuffer(1);
@@ -511,6 +541,11 @@ public class ChromeBluetooth extends CordovaPlugin {
       }
 
       public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        try {
+          bluetoothEventsCallback.sendPluginResult(
+              getMultipartEventsResult("onCharacteristicValueChanged", new JSONObject());
+        } catch (JSONException e) {
+        }
         Log.e(LOG_TAG, "CHARACTERISTIC CHANGED");
       }
     };
