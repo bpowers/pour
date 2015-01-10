@@ -10,6 +10,7 @@
         "ArrayBuffer": false,
         "Uint8Array": false,
         "UI": false,
+	"setInterval": false,
 	"chrome": false
 	
     }
