@@ -716,7 +716,7 @@ define('packet',['./constants'], function(constants) {
         if (payload.length > MAX_PAYLOAD_LENGTH)
             throw 'payload too long: ' + payload.length;
 
-        var buf = new ArrayBuffer(9 + payload.length);
+        var buf = new ArrayBuffer(8 + payload.length);
         var bytes = new Uint8Array(buf);
 
         var sequenceId = nextSequenceId()
@@ -736,7 +736,6 @@ define('packet',['./constants'], function(constants) {
         var contentsToChecksum = new Uint8Array(buf, 3, payload.length + 4);
 
         bytes[7 + payload.length] = checksum(contentsToChecksum);
-        bytes[7 + payload.length + 1] = 0;
 
         return buf;
     };
