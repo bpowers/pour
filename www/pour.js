@@ -753,7 +753,7 @@ define('packet',['./constants'], function(constants) {
             period = 1;
         if (!time)
             time = 100;
-        if (!tpye)
+        if (!type)
             type = 1;
 
         var payload = [period & 0xff, time & 0xff, type & 0xff];
@@ -768,6 +768,7 @@ define('packet',['./constants'], function(constants) {
 
     return {
         encodeTare: encodeTare,
+        encodeWeight: encodeWeight,
         decode: decode,
         setSequenceId: setSequenceId,
         getSequenceId: getSequenceId,
@@ -824,11 +825,11 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         return true;
     };
 
-    Scale.prototype.tare = function() {
+    Scale.prototype.weigh = function() {
         if (!this.initialized)
             return false;
 
-        var msg = packet.encodeWeigh();
+        var msg = packet.encodeWeight();
 
         chrome.bluetoothLowEnergy.writeCharacteristicValue(
             this.characteristic.instanceId, msg, this.logError.bind(this));

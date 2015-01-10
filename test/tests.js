@@ -6,6 +6,7 @@ define(['../lib/packet'], function(packet) {
     'use strict';
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
+    var WEIGHT_PACKET = [0xdf, 0x78, 0x8, 0x4, 0x2, 0x0, 0x3, 0x50, 0xe3, 0x50, 0x8c];
     
     var suite = {};
 
@@ -19,16 +20,23 @@ define(['../lib/packet'], function(packet) {
     };
 
     suite.encode = function(test) {
-        var sequenceId = TARE_PACKET[4];
+        var encodedMsg;
 
-        packet.setSequenceId(sequenceId);
-
-        var encodedMsg = packet.encodeTare();
+        packet.setSequenceId(TARE_PACKET[4]);
+        encodedMsg = packet.encodeTare();
 
         test.ok(encodedMsg, 'no encoded message returned');
         test.ok(encodedMsg.byteLength === TARE_PACKET.length, 'bad length');
 
         test.ok(contentsEqual(test, encodedMsg, TARE_PACKET), 'contents match');
+
+        packet.setSequenceId(WEIGHT_PACKET[4]);
+        encodedMsg = packet.encodeWeight();
+
+        test.ok(encodedMsg, 'no encoded message returned');
+        test.ok(encodedMsg.byteLength === WEIGHT_PACKET.length, 'bad length');
+
+        test.ok(contentsEqual(test, encodedMsg, WEIGHT_PACKET), 'contents match');
 
         test.done();
     };

@@ -432,6 +432,14 @@ public class ChromeBluetooth extends CordovaPlugin {
       return;
     }
 
+    Log.i(LOG_TAG, "writing characteristic");
+
+    for (BluetoothGattDescriptor descriptor: characteristic.getDescriptors()) {
+      descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+      gatt.writeDescriptor(descriptor);
+      break;
+    }
+
     characteristic.setValue(value);
     gatt.writeCharacteristic(characteristic);
 
