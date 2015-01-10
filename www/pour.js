@@ -683,7 +683,7 @@ define('packet',['./constants'], function(constants) {
         this.type = type;
         this.id = id;
         this.payload = payload;
-        this.value = -1;
+        this.value = null;
         if (this.type === MessageType.WEIGHT_RESPONSE) {
             var value = ((payload[1] & 0xff) << 8) + (payload[0] & 0xff);
             for (var i = 0; i < payload[4]; i++)
@@ -719,10 +719,6 @@ define('packet',['./constants'], function(constants) {
             sum += data[i];
 
         return sum & 0xff;
-    };
-
-    var payloadEncode = function() {
-
     };
 
     var encode = function(msgType, id, payload) {
@@ -767,7 +763,7 @@ define('packet',['./constants'], function(constants) {
 
         var len1 = bytes[2];
 
-        var contentsToChecksum = bytes.slice(3, bytes.length - 1);
+        var contentsToChecksum = new Uint8Array(data.slice(3, bytes.length - 1));
 
         var cs = checksum(contentsToChecksum);
         if (bytes[data.length - 1] !== cs)
@@ -783,14 +779,10 @@ define('packet',['./constants'], function(constants) {
         if (len2 !== data.length - 8)
             throw 'length mismatch 2';
 
-        var payloadIn = bytes.slice(7, bytes.length - 1);
+        var payloadIn = new Uint8Array(data.slice(7, bytes.length - 1));
         var payload = decipher(payloadIn, sequenceId);
 
         return new Message(msgType, id, payload);
-    };
-
-    var msgType = function() {
-
     };
 
     var encodeWeight = function(period, time, type) {
@@ -808,7 +800,8 @@ define('packet',['./constants'], function(constants) {
 
     var encodeTare = function() {
         var payload = [0x0, 0x0];
-        return encode(MessageType.CUSTOM, 0, [0x0, 0x0]);
+
+        return encode(MessageType.CUSTOM, 0, payload);
     };
 
     return {
@@ -833,8 +826,7 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         this.device = device;
         this.service = service;
         this.characteristic = null;
-
-        this.onReady = new Event('Scale.onReady');
+        this.prevWeight = null;
 
         chrome.bluetoothLowEnergy.onCharacteristicValueChanged.addListener(
             this.characteristicValueChanged.bind(this));
@@ -849,8 +841,19 @@ define('scale',['./constants', './event_target', './packet'], function(constants
     Scale.prototype = new event_target.EventTarget();
 
     Scale.prototype.characteristicValueChanged = function(event) {
-        console.log('value changed:');
-        console.log(event);
+        var msg = packet.decode(event.value);
+        if (!msg) {
+            console.log('characteristic value update, but no message');
+            return;
+        }
+
+        if (msg.type === constants.MessageType.WEIGHT_RESPONSE) {
+            var shouldDispatch = this.prevWeight !== msg.value;
+            this.prevWeight = msg.value;
+
+            if (shouldDispatch)
+                this.dispatchEvent(new CustomEvent('weightChanged', {'detail': {'value': msg.value}}));
+        }
     };
 
     Scale.prototype.logError = function() {
@@ -920,6 +923,10 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         }
 
         this.initialized = true;
+
+        this.weigh();
+        setInterval(this.weigh.bind(this), 1000);
+
         this.dispatchEvent(new CustomEvent('ready', {'detail': {'scale': this}}));
     };
 
@@ -1066,14 +1073,21 @@ define('app',['./scale_finder'], function(scale_finder) {
         UI.getInstance().setDiscoveryToggleState(event.detail.discovering, !!this.scale);
     };
 
+    App.prototype.weightChanged = function(event) {
+        var value = event.detail.value;
+
+        UI.getInstance().setWeightDisplay(value);
+    }
+
     App.prototype.scaleAdded = function(event) {
         this.scale = event.detail.scale;
+        this.scale.addEventListener('weightChanged',
+                                    this.weightChanged.bind(this));
 
         this.finder.stopDiscovery();
 
         UI.getInstance().setDiscoveryToggleEnabled(false);
         UI.getInstance().setTareEnabled(true);
-        UI.getInstance().setWeighEnabled(true);
     };
 
     App.prototype.init = function() {
@@ -1090,14 +1104,6 @@ define('app',['./scale_finder'], function(scale_finder) {
                 return;
             }
             this.scale.tare();
-        }.bind(this));
-
-        UI.getInstance().setWeighHandler(function() {
-            if (!this.scale) {
-                console.log('ERROR: weigh without scale.');
-                return;
-            }
-            this.scale.weigh();
         }.bind(this));
     };
 

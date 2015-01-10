@@ -28,11 +28,6 @@ var UI = (function() {
         tareButton.disabled = !isEnabled;
     };
 
-    UI.prototype.setWeighEnabled = function(isEnabled) {
-        var weighButton = document.getElementById('weigh-button');
-        weighButton.disabled = !isEnabled;
-    };
-
     UI.prototype.setDiscoveryToggleHandler = function(handler) {
         var discoveryToggleButton = document.getElementById('discovery-toggle-button');
         discoveryToggleButton.onclick = handler;
@@ -43,9 +38,10 @@ var UI = (function() {
         tareButton.onclick = handler;
     }
 
-    UI.prototype.setWeighHandler = function(handler) {
-        var weighButton = document.getElementById('weigh-button');
-        weighButton.onclick = handler;
+    UI.prototype.setWeightDisplay = function(value) {
+        var weightDisplay = document.getElementById('weight-display');
+
+        weightDisplay.innerHTML = '' + value;
     };
 
     UI.prototype.setAdapterState = function(address, name) {
