@@ -5,7 +5,7 @@ ifneq ($V, 1)
 MAKEFLAGS = -s
 endif
 
-all: dist check
+all: check dist
 
 dist: www/pour.js www/pour.min.js
 
@@ -34,10 +34,10 @@ hint:
 clean:
 	rm -rf dist www/pour.js www/pour.min.js
 
-run-ios: dist
+run-ios: check dist
 	cca run ios --devicereset
 
-run-android: dist
+run-android: check dist
 	rsync -av ./plugins/org.chromium.bluetooth/src/android/ ./platforms/android/src/org/chromium
 	cca run android --device
 
