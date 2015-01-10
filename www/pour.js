@@ -824,6 +824,18 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         return true;
     };
 
+    Scale.prototype.tare = function() {
+        if (!this.initialized)
+            return false;
+
+        var msg = packet.encodeWeigh();
+
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, msg, this.logError.bind(this));
+
+        return true;
+    };
+
     Scale.prototype.allCharacteristics = function(characteristics) {
         if (chrome.runtime.lastError) {
             console.log('failed listing characteristics: ' +
@@ -1012,6 +1024,7 @@ define('app',['./scale_finder'], function(scale_finder) {
 
         UI.getInstance().setDiscoveryToggleEnabled(false);
         UI.getInstance().setTareEnabled(true);
+        UI.getInstance().setWeighEnabled(true);
     };
 
     App.prototype.init = function() {
@@ -1028,6 +1041,14 @@ define('app',['./scale_finder'], function(scale_finder) {
                 return;
             }
             this.scale.tare();
+        }.bind(this));
+
+        UI.getInstance().setWeighHandler(function() {
+            if (!this.scale) {
+                console.log('ERROR: weigh without scale.');
+                return;
+            }
+            this.scale.weigh();
         }.bind(this));
     };
 

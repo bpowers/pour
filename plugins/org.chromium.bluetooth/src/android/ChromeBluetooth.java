@@ -404,8 +404,13 @@ public class ChromeBluetooth extends CordovaPlugin {
       return;
     }
 
-    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-    gatt.writeDescriptor(descriptor);
+    Log.e(LOG_TAG, "n descriptors: " + characteristic.getDescriptors().size());
+
+    for (BluetoothGattDescriptor descriptor: characteristic.getDescriptors()) {
+      descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+      gatt.writeDescriptor(descriptor);
+      break;
+    }
 
     callbackContext.success();
   }
@@ -500,7 +505,6 @@ public class ChromeBluetooth extends CordovaPlugin {
         case BluetoothProfile.STATE_CONNECTING:
           break;
         case BluetoothProfile.STATE_CONNECTED:
-          Log.e(LOG_TAG, "CONNECTION STATE CONNECTED");
           gatt.discoverServices();
           if (callbackContext != null) {
             callbackContext.success();
@@ -542,8 +546,11 @@ public class ChromeBluetooth extends CordovaPlugin {
 
       public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         try {
+          JSONObject result = new JSONObject();
+          result.put("ok", "true");
+
           bluetoothEventsCallback.sendPluginResult(
-              getMultipartEventsResult("onCharacteristicValueChanged", new JSONObject());
+            getMultipartEventsResult("onCharacteristicValueChanged", result));
         } catch (JSONException e) {
         }
         Log.e(LOG_TAG, "CHARACTERISTIC CHANGED");

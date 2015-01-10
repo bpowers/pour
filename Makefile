@@ -38,6 +38,7 @@ run-ios: dist
 	cca run ios --devicereset
 
 run-android: dist
+	rsync -av ./plugins/org.chromium.bluetooth/src/android/ ./platforms/android/src/org/chromium
 	cca run android --device
 
 check: node_modules bower_components
