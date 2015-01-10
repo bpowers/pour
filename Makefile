@@ -34,10 +34,10 @@ hint:
 clean:
 	rm -rf dist www/pour.js www/pour.min.js
 
-run-ios:
+run-ios: dist
 	cca run ios --devicereset
 
-run-android:
+run-android: dist
 	cca run android --device
 
 check: node_modules bower_components

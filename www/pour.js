@@ -2,7 +2,7 @@
     if (typeof define === 'function' && define.amd) {
         define(factory);
     } else {
-        global.sd = factory();
+        global.pour = factory();
     }
 }(typeof window !== "undefined" ? window : this, function () {
 /**
@@ -644,7 +644,7 @@ define('event_target',[], function() {
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-define('scale',['./constants', './event_target'], function(constants) {
+define('scale',['./constants', './event_target'], function(constants, event_target) {
     
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
@@ -738,6 +738,8 @@ define('scale',['./constants', './event_target'], function(constants) {
 define('scale_finder',['./constants', './event_target', './scale'], function(constants, event_target, scale) {
     
 
+    var Scale = scale.Scale;
+
     function ScaleFinder() {
         this.ready = false;
         this.devices = {}
@@ -776,7 +778,7 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
     };
 
     ScaleFinder.prototype.deviceAdded = function(device) {
-        if (!device.uuids || device.uuids.indexOf(SCALE_SERVICE_UUID) < 0)
+        if (!device.uuids || device.uuids.indexOf(constants.SCALE_SERVICE_UUID) < 0)
             return;
 
         if (device.address in this.devices) {
@@ -796,7 +798,7 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
     };
 
     ScaleFinder.prototype.serviceAdded = function(service) {
-        if (service.uuid !== SCALE_SERVICE_UUID)
+        if (service.uuid !== constants.SCALE_SERVICE_UUID)
             return;
 
         var device = this.devices[service.deviceAddress];
@@ -909,10 +911,10 @@ define('pour',['./packet', './app'], function(packet, app) {
 
     return {
         packet: packet,
-        App: App,
+        App: app.App,
     };
 });
 
 
-    return require('sd');
+    return require('pour');
 }));
