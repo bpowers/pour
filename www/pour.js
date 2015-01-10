@@ -630,7 +630,7 @@ define('event_target',[], function() {
             if (type in this.listeners_) {
                 // Clone to prevent removal during dispatch
                 var handlers = this.listeners_[type].concat();
-                for (var i = 0, handler; handler = handlers[i]; i++) {
+                for (var i = 0, handler; (handler = handlers[i]); i++) {
                     if (handler.handleEvent)
                         prevented |= handler.handleEvent.call(handler, event) === false;
                     else
@@ -653,6 +653,8 @@ define('event_target',[], function() {
 
 define('packet',['./constants'], function(constants) {
     
+
+    var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
 
     // unsigned char packet sequence id.
     var sequenceId = 0;
@@ -681,11 +683,24 @@ define('packet',['./constants'], function(constants) {
         }
     }
 
-    var encode = function() {
+    var checksum = function(data) {
+        var sum;
+
+        for (var i = 0; i < data.length; i++)
+            sum += data[i];
+
+        return sum & 0xff;
+    };
+
+    var payloadEncode = function() {
 
     };
 
-    var decode = function() {
+    var encode = function(msg, id, payload) {
+
+    };
+
+    var decode = function(data) {
 
     };
 
@@ -693,8 +708,18 @@ define('packet',['./constants'], function(constants) {
 
     };
 
+    var encodeTare = function() {
+        var buf = new ArrayBuffer(16);
+        var bytes = new Uint8Array(buf);
+
+        for (var i = 0; i < TARE_PACKET.length; i++)
+            bytes[i] = TARE_PACKET[i] & 0xff;
+
+        return buf;
+    }
+
     return {
-        encode: encode,
+        encodeTare: encodeTare,
         decode: decode,
         getSequenceId: getSequenceId,
     };
@@ -707,8 +732,6 @@ define('packet',['./constants'], function(constants) {
 
 define('scale',['./constants', './event_target', './packet'], function(constants, event_target, packet) {
     
-
-    var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
 
     function Scale(device, service) {
         this.initialized = false;
@@ -737,14 +760,10 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         if (!this.initialized)
             return false;
 
-        var buf = new ArrayBuffer(16);
-        var bytes = new Uint8Array(buf);
-
-        for (var i = 0; i < TARE_PACKET.length; i++)
-            bytes[i] = TARE_PACKET[i] & 0xff;
+        var msg = packet.encodeTare();
 
         chrome.bluetoothLowEnergy.writeCharacteristicValue(
-            this.characteristic.instanceId, buf, this.logError.bind(this));
+            this.characteristic.instanceId, msg, this.logError.bind(this));
 
         return true;
     };
@@ -803,7 +822,7 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
 
     function ScaleFinder() {
         this.ready = false;
-        this.devices = {}
+        this.devices = {};
         this.scales = {};
         this.scaleReadyCallbacks = {};
         this.adapterState = null;
@@ -865,13 +884,13 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
         var device = this.devices[service.deviceAddress];
         var scale = new Scale(device, service);
         this.scales[device.address] = scale;
-        var readyCallback = this.scaleReady.bind(this)
+        var readyCallback = this.scaleReady.bind(this);
         this.scaleReadyCallbacks[scale] = readyCallback;
 
         // to simplify development elsewhere, fire the ScaleFinder's
         // scaleAdded event after the scale is ready to be used.
         scale.addEventListener('ready', readyCallback);
-    }
+    };
 
     ScaleFinder.prototype.scaleReady = function(event) {
         var scale = event.detail.scale;
@@ -879,9 +898,9 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
         scale.removeEventListener('ready', readyCallback);
         delete this.scaleReadyCallbacks[scale];
 
-        var event = new CustomEvent('scaleAdded', {'detail': {'scale': scale}});
+        event = new CustomEvent('scaleAdded', {'detail': {'scale': scale}});
         this.dispatchEvent(event);
-    }
+    };
 
     ScaleFinder.prototype.logDiscovery = function() {
         if (chrome.runtime.lastError)
@@ -891,11 +910,11 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
 
     ScaleFinder.prototype.startDiscovery = function() {
         chrome.bluetooth.startDiscovery(this.logDiscovery);
-    }
+    };
 
     ScaleFinder.prototype.stopDiscovery = function() {
         chrome.bluetooth.stopDiscovery(this.logDiscovery);
-    }
+    };
 
     return {
         ScaleFinder: ScaleFinder,
@@ -937,11 +956,9 @@ define('app',['./scale_finder'], function(scale_finder) {
 
         UI.getInstance().setDiscoveryToggleEnabled(false);
         UI.getInstance().setTareEnabled(true);
-    }
+    };
 
     App.prototype.init = function() {
-        var self = this;
-
         UI.getInstance().setDiscoveryToggleHandler(function() {
             if (!this.discovering)
                 this.finder.startDiscovery();
@@ -967,7 +984,7 @@ define('app',['./scale_finder'], function(scale_finder) {
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-define('pour',['./app'], function(packet, app) {
+define('pour',['./app'], function(app) {
     
 
     return {
