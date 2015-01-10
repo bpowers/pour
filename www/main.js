@@ -4,16 +4,98 @@ var main = (function() {
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
 
-    var Event = require('org.chromium.common.events');
+    /**
+     * Creates a new EventTarget. This class implements the DOM level 2
+     * EventTarget interface and can be used wherever those are used.
+     * @constructor
+     * @implements {EventTarget}
+     *
+     * BSD-licensed, taken from Chromium: src/ui/webui/resources/js/cr/event_target.js
+     */
+    function EventTarget() {
+    }
+
+    EventTarget.prototype = {
+        /**
+         * Adds an event listener to the target.
+         * @param {string} type The name of the event.
+         * @param {EventListenerType} handler The handler for the event. This is
+         *     called when the event is dispatched.
+         */
+        addEventListener: function(type, handler) {
+            if (!this.listeners_)
+                this.listeners_ = Object.create(null);
+            if (!(type in this.listeners_)) {
+                this.listeners_[type] = [handler];
+            } else {
+                var handlers = this.listeners_[type];
+                if (handlers.indexOf(handler) < 0)
+                    handlers.push(handler);
+            }
+        },
+
+        /**
+         * Removes an event listener from the target.
+         * @param {string} type The name of the event.
+         * @param {EventListenerType} handler The handler for the event.
+         */
+        removeEventListener: function(type, handler) {
+            if (!this.listeners_)
+                return;
+            if (type in this.listeners_) {
+                var handlers = this.listeners_[type];
+                var index = handlers.indexOf(handler);
+                if (index >= 0) {
+                    // Clean up if this was the last listener.
+                    if (handlers.length == 1)
+                        delete this.listeners_[type];
+                    else
+                        handlers.splice(index, 1);
+                }
+            }
+        },
+
+        /**
+         * Dispatches an event and calls all the listeners that are listening to
+         * the type of the event.
+         * @param {!Event} event The event to dispatch.
+         * @return {boolean} Whether the default action was prevented. If someone
+         *     calls preventDefault on the event object then this returns false.
+         */
+        dispatchEvent: function(event) {
+            if (!this.listeners_)
+                return true;
+
+            // Since we are using DOM Event objects we need to override some of the
+            // properties and methods so that we can emulate this correctly.
+            var self = this;
+            event.__defineGetter__('target', function() {
+                return self;
+            });
+
+            var type = event.type;
+            var prevented = 0;
+            if (type in this.listeners_) {
+                // Clone to prevent removal during dispatch
+                var handlers = this.listeners_[type].concat();
+                for (var i = 0, handler; handler = handlers[i]; i++) {
+                    if (handler.handleEvent)
+                        prevented |= handler.handleEvent.call(handler, event) === false;
+                    else
+                        prevented |= handler.call(this, event) === false;
+                }
+            }
+
+            return !prevented && !event.defaultPrevented;
+        }
+    };
 
     function ScaleFinder() {
+        this.ready = false;
         this.devices = {}
         this.scales = {};
+        this.scaleReadyCallbacks = {};
         this.adapterState = null;
-
-        this.onDiscoveryStateChanged = new Event('ScaleFinder.onDiscoveryStateChanged');
-        this.onScaleAdded = new Event('ScaleFinder.onScaleAdded');
-        this.onScaleRemoved = new Event('ScaleFinder.onScaleRemoved');
 
         chrome.bluetooth.onAdapterStateChanged.addListener(this.adapterStateChanged.bind(this));
         chrome.bluetooth.onDeviceAdded.addListener(this.deviceAdded.bind(this));
@@ -22,20 +104,27 @@ var main = (function() {
         chrome.bluetooth.getAdapterState(this.adapterStateChanged.bind(this));
     }
 
+    ScaleFinder.prototype = new EventTarget();
+
     ScaleFinder.prototype.adapterStateChanged = function(adapterState) {
         if (chrome.runtime.lastError) {
             console.log('adapter state changed: ' + chrome.runtime.lastError.message);
             return;
         }
-        console.log('adapter state changed:');
-        console.log(adapterState);
 
-        var shouldFire = this.adapterState.discovering !== adapterState.discovering;
+        var shouldDispatchReady = !this.adapterState;
+        var shouldDispatchDiscovery = this.adapterState && this.adapterState.discovering !== adapterState.discovering;
 
         this.adapterState = adapterState;
 
-        if (shouldFire)
-            this.onDiscoveryStateChanged.fire(adapterState.discovering);
+        if (shouldDispatchReady)
+            this.dispatchEvent(new Event('ready'));
+        if (shouldDispatchDiscovery) {
+            var event = new CustomEvent(
+                'discoveryStateChanged',
+                {'detail': {'discovering': adapterState.discovering}});
+            this.dispatchEvent(event);
+        }
     };
 
     ScaleFinder.prototype.deviceAdded = function(device) {
@@ -48,23 +137,45 @@ var main = (function() {
         }
         this.devices[device.address] = device;
 
-        device.connect();
+        chrome.bluetoothLowEnergy.connect(device.address,
+                                          {'persistent': true},
+                                          this.deviceConnected.bind(this));
+    };
+
+    ScaleFinder.prototype.deviceConnected = function() {
+        if (chrome.runtime.lastError)
+            console.log('connect failed: ' + chrome.runtime.lastError.message);
     };
 
     ScaleFinder.prototype.serviceAdded = function(service) {
         if (service.uuid !== SCALE_SERVICE_UUID)
             return;
 
-        var scale = new Scale(device);
+        var device = this.devices[service.deviceAddress];
+        var scale = new Scale(device, service);
         this.scales[device.address] = scale;
-        this.onDeviceAdded.fire(scale);
+        var readyCallback = this.scaleReady.bind(this)
+        this.scaleReadyCallbacks[scale] = readyCallback;
 
+        // to simplify development elsewhere, fire the ScaleFinder's
+        // scaleAdded event after the scale is ready to be used.
+        scale.addEventListener('ready', readyCallback);
+    }
+
+    ScaleFinder.prototype.scaleReady = function(event) {
+        var scale = event.detail.scale;
+        var readyCallback = this.scaleReadyCallbacks[scale];
+        scale.removeEventListener('ready', readyCallback);
+        delete this.scaleReadyCallbacks[scale];
+
+        var event = new CustomEvent('scaleAdded', {'detail': {'scale': scale}});
+        this.dispatchEvent(event);
     }
 
     ScaleFinder.prototype.logDiscovery = function() {
         if (chrome.runtime.lastError)
             console.log('Failed to frob discovery: ' +
-                        chromium.runtime.lastError.message);
+                        chrome.runtime.lastError.message);
     };
 
     ScaleFinder.prototype.startDiscovery = function() {
@@ -78,6 +189,7 @@ var main = (function() {
 
     function Scale(device, service) {
         this.initialized = false;
+        this.name = device.name;
         this.device = device;
         this.service = service;
         this.characteristic = null;
@@ -91,13 +203,15 @@ var main = (function() {
         console.log('created scale for ' + this.device.address + ' (' + this.device.name + ')');
     }
 
+    Scale.prototype = new EventTarget();
+
     Scale.prototype.logError = function() {
         if (chrome.runtime.lastError)
             console.log('bluetooth call failed: ' + chrome.runtime.lastError.message);
     };
 
     Scale.prototype.tare = function() {
-        if (!scale.initialized)
+        if (!this.initialized)
             return false;
 
         var buf = new ArrayBuffer(16);
@@ -114,7 +228,8 @@ var main = (function() {
 
     Scale.prototype.allCharacteristics = function(characteristics) {
         if (chrome.runtime.lastError) {
-            console.log('failed listing characteristics: ' + chrome.runtime.lastError.message);
+            console.log('failed listing characteristics: ' +
+                        chrome.runtime.lastError.message);
             return;
         }
 
@@ -139,34 +254,62 @@ var main = (function() {
 
     Scale.prototype.notificationsReady = function() {
         if (chrome.runtime.lastError) {
-            console.log('failed enabling characteristic notifications: ' + chrome.runtime.lastError.message);
+            console.log('failed enabling characteristic notifications: ' +
+                        chrome.runtime.lastError.message);
             // FIXME(bp) exit early once this call succeeds on android.
             //return;
         }
 
-        console.log('scale ready');
         this.initialized = true;
-        this.onReady.fire();
+        this.dispatchEvent(new CustomEvent('ready', {'detail': {'scale': this}}));
     };
 
     function PourApp() {
         this.finder = new ScaleFinder();
-        this.finder.onDiscoveryStateChanged.addListener(updateDiscoveryToggleState);
+        this.finder.addEventListener('ready',
+                                     this.finderReady.bind(this));
+        this.finder.addEventListener('discoveryStateChanged',
+                                     this.updateDiscoveryToggleState.bind(this));
+        this.finder.addEventListener('scaleAdded',
+                                     this.scaleAdded.bind(this));
     }
 
-    PourApp.prototype.updateDiscoveryToggleState = function(discovering) {
-        UI.getInstance().setDiscoveryToggleState(discovering);
+    PourApp.prototype.finderReady = function() {
+        var addr = this.finder.adapterState.address;
+        var name = this.finder.adapterState.name;
+        UI.getInstance().setAdapterState(addr, name);
+        UI.getInstance().setDiscoveryToggleEnabled(true);
     };
+
+    PourApp.prototype.updateDiscoveryToggleState = function(event) {
+        UI.getInstance().setDiscoveryToggleState(event.detail.discovering, !!this.scale);
+    };
+
+    PourApp.prototype.scaleAdded = function(event) {
+        this.scale = event.detail.scale;
+
+        this.finder.stopDiscovery();
+
+        UI.getInstance().setDiscoveryToggleEnabled(false);
+        UI.getInstance().setTareEnabled(true);
+    }
 
     PourApp.prototype.init = function() {
         var self = this;
 
-        // Set up discovery toggle button handler
         UI.getInstance().setDiscoveryToggleHandler(function() {
             if (!this.discovering)
                 this.finder.startDiscovery();
             else
                 this.finder.stopDiscovery();
+        }.bind(this));
+
+        UI.getInstance().setTareHandler(function() {
+            if (!this.scale) {
+                console.log('ERROR: tare without scale.');
+                return;
+            }
+            this.scale.tare();
         }.bind(this));
     };
 

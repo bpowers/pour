@@ -7,18 +7,35 @@ var UI = (function() {
     // Global instance.
     var instance;
 
-    UI.prototype.setDiscoveryToggleState = function(isDiscoverying) {
+    UI.prototype.setDiscoveryToggleState = function(isDiscoverying, haveScale) {
         var discoveryToggleButton = document.getElementById('discovery-toggle-button');
         if (isDiscoverying) {
             discoveryToggleButton.innerHTML = 'cancel';
+        } else if (haveScale) {
+            discoveryToggleButton.innerHTML = 'connected';
         } else {
             discoveryToggleButton.innerHTML = 'connect';
         }
     };
 
+    UI.prototype.setDiscoveryToggleEnabled = function(isEnabled) {
+        var discoveryToggleButton = document.getElementById('discovery-toggle-button');
+        discoveryToggleButton.disabled = !isEnabled;
+    };
+
+    UI.prototype.setTareEnabled = function(isEnabled) {
+        var tareButton = document.getElementById('tare-button');
+        tareButton.disabled = !isEnabled;
+    };
+
     UI.prototype.setDiscoveryToggleHandler = function(handler) {
         var discoveryToggleButton = document.getElementById('discovery-toggle-button');
         discoveryToggleButton.onclick = handler;
+    };
+
+    UI.prototype.setTareHandler = function(handler) {
+        var tareButton = document.getElementById('tare-button');
+        tareButton.onclick = handler;
     };
 
     UI.prototype.setAdapterState = function(address, name) {
