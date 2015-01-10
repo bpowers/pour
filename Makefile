@@ -7,7 +7,7 @@ endif
 
 all: dist check
 
-dist: dist/pour.js dist/pour.min.js
+dist: www/pour.js www/pour.min.js
 
 bower_components:
 	bower install
@@ -20,19 +20,19 @@ node_modules: package.json
 node_modules/.bin/r.js: node_modules bower_components
 	touch $@
 
-dist/pour.js: node_modules/.bin/r.js build.js lib/*.js
-	mkdir -p dist
+www/pour.js: node_modules/.bin/r.js build.js lib/*.js
+	mkdir -p www
 	node_modules/.bin/r.js -o build.js
 
-dist/pour.min.js: node_modules/.bin/r.js build_min.js lib/*.js
-	mkdir -p dist
+www/pour.min.js: node_modules/.bin/r.js build_min.js lib/*.js
+	mkdir -p www
 	node_modules/.bin/r.js -o build_min.js
 
 hint:
 	node_modules/.bin/jshint --config .jshintrc lib/*.js
 
 clean:
-	rm -rf dist
+	rm -rf dist www/pour.js www/pour.min.js
 
 run-ios:
 	cca run ios --devicereset
@@ -43,4 +43,4 @@ run-android:
 check: node_modules bower_components
 	node_modules/.bin/nodeunit test/runner.js
 
-.PHONY: all dist hint jsdeps clean check run-ios run-android
+.PHONY: all www hint jsdeps clean check run-ios run-android

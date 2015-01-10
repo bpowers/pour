@@ -6,5 +6,5 @@
         startFile: 'lib/build/start.frag.js',
         endFile: 'lib/build/end.frag.js'
     },
-    out: 'dist/pour.min.js',
+    out: 'www/pour.min.js',
 })
