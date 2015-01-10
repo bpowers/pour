@@ -398,6 +398,8 @@ public class ChromeBluetooth extends CordovaPlugin {
       return;
     }
 
+    gatt.setCharacteristicNotification(characteristic, true);
+
     if (characteristic.getDescriptors().size() == 0) {
       Log.e(LOG_TAG, "startNotifications failed - no descriptors.");
       callbackContext.error("startNotifications failed - no descriptors.");
@@ -432,13 +434,7 @@ public class ChromeBluetooth extends CordovaPlugin {
       return;
     }
 
-    Log.i(LOG_TAG, "writing characteristic");
-
-    for (BluetoothGattDescriptor descriptor: characteristic.getDescriptors()) {
-      descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-      gatt.writeDescriptor(descriptor);
-      break;
-    }
+    Log.i(LOG_TAG, "writing characteristic " + characteristic.getUuid());
 
     characteristic.setValue(value);
     gatt.writeCharacteristic(characteristic);
@@ -544,6 +540,11 @@ public class ChromeBluetooth extends CordovaPlugin {
         Log.e(LOG_TAG, "DESCRIPTOR WRITE: " + Integer.toString(status));
       }
 
+      public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
+      {
+        Log.i(LOG_TAG, "CHAR READ: " + status);
+      }
+
       public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
       {
         Log.e(LOG_TAG, "CHAR WRITE: " + Integer.toString(status));
@@ -558,6 +559,7 @@ public class ChromeBluetooth extends CordovaPlugin {
       }
 
       public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        Log.e(LOG_TAG, "CHARACTERISTIC CHANGED");
         try {
           JSONObject result = new JSONObject();
           result.put("ok", "true");
@@ -566,7 +568,6 @@ public class ChromeBluetooth extends CordovaPlugin {
             getMultipartEventsResult("onCharacteristicValueChanged", result));
         } catch (JSONException e) {
         }
-        Log.e(LOG_TAG, "CHARACTERISTIC CHANGED");
       }
     };
 
