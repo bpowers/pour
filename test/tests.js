@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-define(['../lib/packet'], function(packet) {
+define(['../lib/constants', '../lib/packet'], function(constants, packet) {
     'use strict';
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
@@ -43,17 +43,18 @@ define(['../lib/packet'], function(packet) {
     };
 
     suite.decode = function(test) {
-        var decodedMsg;
+        var msg;
 
         try {
-            decodedMsg = packet.decode(WEIGHT_RESPONSE_PACKET);
+            msg = packet.decode(WEIGHT_RESPONSE_PACKET);
         } catch (e) {
             console.log(e);
             test.ok(false, 'threw: ' + e);
         }
-        console.log(decodedMsg);
 
-        test.ok(decodedMsg, 'no decoded message returned');
+        test.ok(msg, 'no decoded message returned');
+        test.ok(msg.type === constants.MessageType.WEIGHT_RESPONSE, 'bad type ' + msg.type);
+        test.ok(msg.value === 0, 'value mismatch');
 
         test.done();
     };

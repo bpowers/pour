@@ -750,36 +750,39 @@ define('packet',['./constants'], function(constants) {
     };
 
     var decode = function(data) {
-        if (!data.length)
+        var len = data.length;
+        if (!len)
+            len = data.byteLength;
+        if (!len)
             return;
 
         var bytes = new Uint8Array(data);
 
-        if (bytes.byteLength < 8)
-            throw 'data too short: ' + bytes.byteLength;
+        if (len < 8)
+            throw 'data too short: ' + len;
 
         if (bytes[0] !== MAGIC1 && bytes[1] !== MAGIC2)
             throw "don't have the magic";
 
         var len1 = bytes[2];
 
-        var contentsToChecksum = new Uint8Array(data.slice(3, bytes.length - 1));
+        var contentsToChecksum = new Uint8Array(data.slice(3, len - 1));
 
         var cs = checksum(contentsToChecksum);
-        if (bytes[data.length - 1] !== cs)
-            throw 'checksum mismatch ' + bytes[data.length - 1] + ' !== ' + cs;
+        if (bytes[len - 1] !== cs)
+            throw 'checksum mismatch ' + bytes[len - 1] + ' !== ' + cs;
 
         var msgType = bytes[3];
         var sequenceId = bytes[4];
         var id = bytes[5];
         var len2 = bytes[6];
 
-        if (len1 !== data.length - 3)
-            throw 'length mismatch 1 ' + len1 + ' !== ' + (data.length - 3);
-        if (len2 !== data.length - 8)
+        if (len1 !== len - 3)
+            throw 'length mismatch 1 ' + len1 + ' !== ' + (len - 3);
+        if (len2 !== len - 8)
             throw 'length mismatch 2';
 
-        var payloadIn = new Uint8Array(data.slice(7, bytes.length - 1));
+        var payloadIn = new Uint8Array(data.slice(7, len - 1));
         var payload = decipher(payloadIn, sequenceId);
 
         return new Message(msgType, id, payload);
@@ -1077,7 +1080,7 @@ define('app',['./scale_finder'], function(scale_finder) {
         var value = event.detail.value;
 
         UI.getInstance().setWeightDisplay(value);
-    }
+    };
 
     App.prototype.scaleAdded = function(event) {
         this.scale = event.detail.scale;
