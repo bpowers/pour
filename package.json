@@ -1,0 +1,25 @@
+{
+  "name": "pour",
+  "version": "0.1.0",
+  "description": "make excellent coffee",
+  "homepage": "https://github.com/bpowers/pour",
+  "keywords": [
+    "coffee",
+    "acaia"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bpowers/pour.git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "nodeunit": "~0.8.6",
+    "requirejs": "~2.1.11",
+    "jshint": "~2.5.0",
+    "uglify-js": "~2.4.13"
+  },
+  "engines": {
+    "node": ">=0.10.24"
+  }
+}

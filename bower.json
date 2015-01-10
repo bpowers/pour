@@ -1,0 +1,25 @@
+{
+  "name": "pour",
+  "version": "0.1.0",
+  "description": "make excellent coffee",
+  "homepage": "https://github.com/bpowers/pour",
+  "authors": [
+      "Bobby Powers <bobbypowers@gmail.com>"
+  ],
+  "main": "dist/pour.min.js",
+  "keywords": [
+    "coffee",
+    "acaia"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "almond": "~0.3.0"
+  }
+}
