@@ -561,15 +561,32 @@ public class ChromeBluetooth extends CordovaPlugin {
       public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
         Log.e(LOG_TAG, "CHARACTERISTIC CHANGED");
         try {
-          JSONObject result = new JSONObject();
-          result.put("ok", "true");
+          List<PluginResult> multipartMessage = new ArrayList<PluginResult>();
+          multipartMessage.add(new PluginResult(Status.OK, "onCharacteristicValueChanged"));
+          multipartMessage.add(new PluginResult(Status.OK, characteristic.getUuid().toString()));
+          multipartMessage.add(new PluginResult(Status.OK, getServiceIdFromService(gatt, characteristic.getService())));
+          multipartMessage.add(new PluginResult(Status.OK, "unknown"));
+          multipartMessage.add(new PluginResult(Status.OK, getCharacteristicIdFromCharacteristic(gatt, characteristic)));
+          multipartMessage.add(new PluginResult(Status.OK, getCharacteristicValue(characteristic)));
 
-          bluetoothEventsCallback.sendPluginResult(
-            getMultipartEventsResult("onCharacteristicValueChanged", result));
+          PluginResult result = new PluginResult(Status.OK, multipartMessage);
+          result.setKeepCallback(true);
+
+          bluetoothLowEnergyEventsCallback.sendPluginResult(result);
         } catch (JSONException e) {
         }
       }
     };
+
+  private JSONArray getCharacteristicValue(BluetoothGattCharacteristic characteristic) throws JSONException {
+    JSONArray result = new JSONArray();
+
+    for (byte b: characteristic.getValue()) {
+      result.put(b & 0xff);
+    }
+
+    return result;
+  }
 
   private void connect(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
     String deviceAddress = args.getString(0);

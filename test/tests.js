@@ -7,7 +7,8 @@ define(['../lib/packet'], function(packet) {
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
     var WEIGHT_PACKET = [0xdf, 0x78, 0x8, 0x4, 0x2, 0x0, 0x3, 0x50, 0xe3, 0x50, 0x8c];
-    
+    var WEIGHT_RESPONSE_PACKET = [0xdf, 0x78, 0xc, 0x5, 0x62, 0x2, 0x7, 0x7, 0x7, 0x7, 0x7, 0x94, 0x98, 0xc, 0xc4];
+
     var suite = {};
 
     var contentsEqual = function(test, msg, ref) {
@@ -37,6 +38,22 @@ define(['../lib/packet'], function(packet) {
         test.ok(encodedMsg.byteLength === WEIGHT_PACKET.length, 'bad length');
 
         test.ok(contentsEqual(test, encodedMsg, WEIGHT_PACKET), 'contents match');
+
+        test.done();
+    };
+
+    suite.decode = function(test) {
+        var decodedMsg;
+
+        try {
+            decodedMsg = packet.decode(WEIGHT_RESPONSE_PACKET);
+        } catch (e) {
+            console.log(e);
+            test.ok(false, 'threw: ' + e);
+        }
+        console.log(decodedMsg);
+
+        test.ok(decodedMsg, 'no decoded message returned');
 
         test.done();
     };

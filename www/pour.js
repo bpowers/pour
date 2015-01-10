@@ -658,6 +658,8 @@ define('packet',['./constants'], function(constants) {
     var MAX_PAYLOAD_LENGTH = 10;
 
     var MessageType = constants.MessageType;
+    var MAGIC1 = constants.MAGIC1;
+    var MAGIC2 = constants.MAGIC2;
 
     // packet sequence id in the range of 0-255 (unsigned char)
     var sequenceId = 0;
@@ -699,6 +701,17 @@ define('packet',['./constants'], function(constants) {
         }
     };
 
+    var decipher = function(input, sequenceId) {
+        var result = new Array(input.byteLength);
+
+        for (var i = 0; i < input.byteLength; i++) {
+            var offset = input[i] & 0xff;
+            result[i] = (constants.TABLE2[offset] - sequenceId) & 0xff;
+        }
+
+        return result;
+    };
+
     var checksum = function(data) {
         var sum = 0;
 
@@ -719,10 +732,10 @@ define('packet',['./constants'], function(constants) {
         var buf = new ArrayBuffer(8 + payload.length);
         var bytes = new Uint8Array(buf);
 
-        var sequenceId = nextSequenceId()
+        var sequenceId = nextSequenceId();
 
-        bytes[0] = constants.MAGIC1;
-        bytes[1] = constants.MAGIC2;
+        bytes[0] = MAGIC1;
+        bytes[1] = MAGIC2;
         bytes[2] = 5 + payload.length;
         bytes[3] = msgType;
         bytes[4] = sequenceId;
@@ -741,7 +754,39 @@ define('packet',['./constants'], function(constants) {
     };
 
     var decode = function(data) {
+        if (!data.length)
+            return;
 
+        var bytes = new Uint8Array(data);
+
+        if (bytes.byteLength < 8)
+            throw 'data too short: ' + bytes.byteLength;
+
+        if (bytes[0] !== MAGIC1 && bytes[1] !== MAGIC2)
+            throw "don't have the magic";
+
+        var len1 = bytes[2];
+
+        var contentsToChecksum = bytes.slice(3, bytes.length - 1);
+
+        var cs = checksum(contentsToChecksum);
+        if (bytes[data.length - 1] !== cs)
+            throw 'checksum mismatch ' + bytes[data.length - 1] + ' !== ' + cs;
+
+        var msgType = bytes[3];
+        var sequenceId = bytes[4];
+        var id = bytes[5];
+        var len2 = bytes[6];
+
+        if (len1 !== data.length - 3)
+            throw 'length mismatch 1 ' + len1 + ' !== ' + (data.length - 3);
+        if (len2 !== data.length - 8)
+            throw 'length mismatch 2';
+
+        var payloadIn = bytes.slice(7, bytes.length - 1);
+        var payload = decipher(payloadIn, sequenceId);
+
+        return new Message(msgType, id, payload);
     };
 
     var msgType = function() {
@@ -803,9 +848,9 @@ define('scale',['./constants', './event_target', './packet'], function(constants
 
     Scale.prototype = new event_target.EventTarget();
 
-    Scale.prototype.characteristicValueChanged = function() {
+    Scale.prototype.characteristicValueChanged = function(event) {
         console.log('value changed:');
-        console.log(arguments);
+        console.log(event);
     };
 
     Scale.prototype.logError = function() {
