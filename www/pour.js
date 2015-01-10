@@ -882,9 +882,6 @@ define('scale',['./constants', './event_target', './packet'], function(constants
 
         var msg = packet.encodeWeight();
 
-        console.log('sending weight:');
-        console.log(msg);
-
         chrome.bluetoothLowEnergy.writeCharacteristicValue(
             this.characteristic.instanceId, msg, this.logError.bind(this));
 
