@@ -449,7 +449,7 @@ define('constants',[], function() {
     constants.SCALE_SERVICE_UUID = '00001820-0000-1000-8000-00805f9b34fb';
     constants.SCALE_CHARACTERISTIC_UUID = '00002a80-0000-1000-8000-00805f9b34fb';
 
-    constants.MAGIC = 0xdf;
+    constants.MAGIC1 = 0xdf;
     constants.MAGIC2 = 0x78;
 
     // used for encoding packets going to the scale
@@ -654,14 +654,23 @@ define('event_target',[], function() {
 define('packet',['./constants'], function(constants) {
     
 
-    var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
+    // TODO(bp) this is a guess
+    var MAX_PAYLOAD_LENGTH = 10;
 
-    // unsigned char packet sequence id.
+    var MessageType = constants.MessageType;
+
+    // packet sequence id in the range of 0-255 (unsigned char)
     var sequenceId = 0;
     
     var nextSequenceId = function() {
         var next = sequenceId++;
         sequenceId &= 0xff;
+
+        return next;
+    };
+
+    var setSequenceId = function(id) {
+        sequenceId = id & 0xff;
     };
 
     var getSequenceId = function() {
@@ -673,7 +682,7 @@ define('packet',['./constants'], function(constants) {
         this.id = id;
         this.payload = payload;
         this.value = -1;
-        if (this.type === constants.MessageType.WEIGHT_RESPONSE) {
+        if (this.type === MessageType.WEIGHT_RESPONSE) {
             var value = ((payload[1] & 0xff) << 8) + (payload[0] & 0xff);
             for (var i = 0; i < payload[4]; i++)
                 value /= 10;
@@ -683,8 +692,15 @@ define('packet',['./constants'], function(constants) {
         }
     }
 
+    var encipher = function(out, input, sequenceId) {
+        for (var i = 0; i < out.length; i++) {
+            var offset = (input[i] + sequenceId) & 0xff;
+            out[i] = constants.TABLE1[offset];
+        }
+    };
+
     var checksum = function(data) {
-        var sum;
+        var sum = 0;
 
         for (var i = 0; i < data.length; i++)
             sum += data[i];
@@ -696,8 +712,32 @@ define('packet',['./constants'], function(constants) {
 
     };
 
-    var encode = function(msg, id, payload) {
+    var encode = function(msgType, id, payload) {
+        if (payload.length > MAX_PAYLOAD_LENGTH)
+            throw 'payload too long: ' + payload.length;
 
+        var buf = new ArrayBuffer(8 + payload.length);
+        var bytes = new Uint8Array(buf);
+
+        var sequenceId = nextSequenceId()
+
+        bytes[0] = constants.MAGIC1;
+        bytes[1] = constants.MAGIC2;
+        bytes[2] = 5 + payload.length;
+        bytes[3] = msgType;
+        bytes[4] = sequenceId;
+        bytes[5] = id;
+        bytes[6] = payload.length & 0xff;
+
+        var payloadOut = new Uint8Array(buf, 7, payload.length);
+
+        encipher(payloadOut, payload, sequenceId);
+
+        var contentsToChecksum = new Uint8Array(buf, 3, payload.length + 4);
+
+        bytes[7 + payload.length] = checksum(contentsToChecksum);
+
+        return buf;
     };
 
     var decode = function(data) {
@@ -708,23 +748,31 @@ define('packet',['./constants'], function(constants) {
 
     };
 
+    var encodeWeight = function(period, time, type) {
+        if (!period)
+            period = 1;
+        if (!time)
+            time = 100;
+        if (!tpye)
+            type = 1;
+
+        var payload = [period & 0xff, time & 0xff, type & 0xff];
+
+        return encode(MessageType.WEIGHT, 0, payload);
+    };
+
     var encodeTare = function() {
-        var buf = new ArrayBuffer(16);
-        var bytes = new Uint8Array(buf);
-
-        for (var i = 0; i < TARE_PACKET.length; i++)
-            bytes[i] = TARE_PACKET[i] & 0xff;
-
-        return buf;
-    }
+        var payload = [0x0, 0x0];
+        return encode(MessageType.CUSTOM, 0, [0x0, 0x0]);
+    };
 
     return {
         encodeTare: encodeTare,
         decode: decode,
+        setSequenceId: setSequenceId,
         getSequenceId: getSequenceId,
     };
 });
-
 
 // Copyright 2015 Bobby Powers. All rights reserved.
 // Use of this source code is governed by the MIT
@@ -742,6 +790,9 @@ define('scale',['./constants', './event_target', './packet'], function(constants
 
         this.onReady = new Event('Scale.onReady');
 
+        chrome.bluetoothLowEnergy.onCharacteristicValueChanged.addListener(
+            this.characteristicValueChanged.bind(this));
+
         chrome.bluetoothLowEnergy.getCharacteristics(
             this.service.instanceId,
             this.allCharacteristics.bind(this));
@@ -750,6 +801,11 @@ define('scale',['./constants', './event_target', './packet'], function(constants
     }
 
     Scale.prototype = new event_target.EventTarget();
+
+    Scale.prototype.characteristicValueChanged = function() {
+        console.log('value changed:');
+        console.log(arguments);
+    };
 
     Scale.prototype.logError = function() {
         if (chrome.runtime.lastError)
