@@ -541,7 +541,12 @@ public class ChromeBluetooth extends CordovaPlugin {
       }
 
       public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
-        Log.e(LOG_TAG, "DESCRIPTOR WRITE");
+        Log.e(LOG_TAG, "DESCRIPTOR WRITE: " + Integer.toString(status));
+      }
+
+      public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status)
+      {
+        Log.e(LOG_TAG, "CHAR WRITE: " + Integer.toString(status));
       }
 
       public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
