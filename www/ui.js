@@ -10,9 +10,9 @@ var UI = (function() {
     UI.prototype.setDiscoveryToggleState = function(isDiscoverying) {
         var discoveryToggleButton = document.getElementById('discovery-toggle-button');
         if (isDiscoverying) {
-            discoveryToggleButton.innerHTML = 'stop discovery';
+            discoveryToggleButton.innerHTML = 'cancel';
         } else {
-            discoveryToggleButton.innerHTML = 'start discovery';
+            discoveryToggleButton.innerHTML = 'connect';
         }
     };
 

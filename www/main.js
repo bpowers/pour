@@ -4,36 +4,101 @@ var main = (function() {
 
     var TARE_PACKET = [0xdf, 0x78, 0x7, 0xc, 0x3, 0x0, 0x2, 0x50, 0x50, 0xb1];
 
-    function PourApp() {
-        this.deviceAddress = null;
-        this.serviceId = null;
-        this.characteristicId = null;
-        this.initialized = false;
-        this.discovering = false;
+    var Event = require('org.chromium.common.events');
+
+    function ScaleFinder() {
+        this.devices = {}
+        this.scales = {};
+        this.adapterState = null;
+
+        this.onDiscoveryStateChanged = new Event('ScaleFinder.onDiscoveryStateChanged');
+        this.onScaleAdded = new Event('ScaleFinder.onScaleAdded');
+        this.onScaleRemoved = new Event('ScaleFinder.onScaleRemoved');
+
+        chrome.bluetooth.onAdapterStateChanged.addListener(this.adapterStateChanged.bind(this));
+        chrome.bluetooth.onDeviceAdded.addListener(this.deviceAdded.bind(this));
+        chrome.bluetoothLowEnergy.onServiceAdded.addListener(this.serviceAdded.bind(this));
+
+        chrome.bluetooth.getAdapterState(this.adapterStateChanged.bind(this));
     }
 
-    PourApp.prototype.updateDiscoveryToggleState = function(discovering) {
-        if (this.discovering !== discovering) {
-            this.discovering = discovering;
-            UI.getInstance().setDiscoveryToggleState(this.discovering);
+    ScaleFinder.prototype.adapterStateChanged = function(adapterState) {
+        if (chrome.runtime.lastError) {
+            console.log('adapter state changed: ' + chrome.runtime.lastError.message);
+            return;
         }
+        console.log('adapter state changed:');
+        console.log(adapterState);
+
+        var shouldFire = this.adapterState.discovering !== adapterState.discovering;
+
+        this.adapterState = adapterState;
+
+        if (shouldFire)
+            this.onDiscoveryStateChanged.fire(adapterState.discovering);
     };
 
-    PourApp.prototype.logError = function() {
+    ScaleFinder.prototype.deviceAdded = function(device) {
+        if (!device.uuids || device.uuids.indexOf(SCALE_SERVICE_UUID) < 0)
+            return;
+
+        if (device.address in this.devices) {
+            console.log('WARN: device added that is already known ' + device.address);
+            return;
+        }
+        this.devices[device.address] = device;
+
+        device.connect();
+    };
+
+    ScaleFinder.prototype.serviceAdded = function(service) {
+        if (service.uuid !== SCALE_SERVICE_UUID)
+            return;
+
+        var scale = new Scale(device);
+        this.scales[device.address] = scale;
+        this.onDeviceAdded.fire(scale);
+
+    }
+
+    ScaleFinder.prototype.logDiscovery = function() {
+        if (chrome.runtime.lastError)
+            console.log('Failed to frob discovery: ' +
+                        chromium.runtime.lastError.message);
+    };
+
+    ScaleFinder.prototype.startDiscovery = function() {
+        chrome.bluetooth.startDiscovery(this.logDiscovery);
+    }
+
+    ScaleFinder.prototype.stopDiscovery = function() {
+        chrome.bluetooth.stopDiscovery(this.logDiscovery);
+    }
+
+
+    function Scale(device, service) {
+        this.initialized = false;
+        this.device = device;
+        this.service = service;
+        this.characteristic = null;
+
+        this.onReady = new Event('Scale.onReady');
+
+        chrome.bluetoothLowEnergy.getCharacteristics(
+            this.service.instanceId,
+            this.allCharacteristics.bind(this));
+
+        console.log('created scale for ' + this.device.address + ' (' + this.device.name + ')');
+    }
+
+    Scale.prototype.logError = function() {
         if (chrome.runtime.lastError)
             console.log('bluetooth call failed: ' + chrome.runtime.lastError.message);
     };
 
-    PourApp.prototype.logDiscovery = function() {
-        if (chrome.runtime.lastError)
-            console.log('Failed to ' + (this.discovering ? 'stop' : 'start') +
-                        ' discovery ' + chromium.runtime.lastError.message);
-    };
-
-
-    PourApp.prototype.ready = function() {
-        console.log('ready - setting tare');
-        document.getElementById('device-status').innerHTML += ' RDY';
+    Scale.prototype.tare = function() {
+        if (!scale.initialized)
+            return false;
 
         var buf = new ArrayBuffer(16);
         var bytes = new Uint8Array(buf);
@@ -41,102 +106,68 @@ var main = (function() {
         for (var i = 0; i < TARE_PACKET.length; i++)
             bytes[i] = TARE_PACKET[i] & 0xff;
 
-        var self;
-        console.log('writing tare');
-        console.log(this.characteristicId);
-        chrome.bluetoothLowEnergy.writeCharacteristicValue(this.characteristicId, buf, function() {
-            if (chrome.runtime.lastError)
-                console.log(chrome.runtime.lastError.message);
-            console.log('write callback');
-            console.log(arguments);
-        });
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, buf, this.logError.bind(this));
+
+        return true;
     };
 
-    PourApp.prototype.serviceAdded = function(service) {
-        if (service.uuid !== SCALE_SERVICE_UUID)
+    Scale.prototype.allCharacteristics = function(characteristics) {
+        if (chrome.runtime.lastError) {
+            console.log('failed listing characteristics: ' + chrome.runtime.lastError.message);
             return;
-
-        this.serviceId = service.instanceId;
-        console.log('service added: ' + this.serviceId);
-
-        var self = this;
-        var notificationsSet = function() {
-            if (chrome.runtime.lastError)
-                console.log('failed enabling characteristic notifications: ' + chrome.runtime.lastError.message);
-
-            self.initialized = true;
-            self.ready();
         }
 
-        var allCharacteristics = function(characteristics) {
-            if (chrome.runtime.lastError) {
-                console.log('failed listing characteristics: ' + chrome.runtime.lastError.message);
-                return;
-            }
-
-            var found = false;
-            for (var i = 0; i < characteristics.length; i++) {
-                if (characteristics[i].uuid == SCALE_CHARACTERISTIC_UUID) {
-                    self.characteristicId = characteristics[i].instanceId;
-                    found = true;
-                    break;
-                }
-            }
-
-            if (found) {
-                console.log('starting char notifications');
-                chrome.bluetoothLowEnergy.startCharacteristicNotifications(self.characteristicId, notificationsSet);
-            } else {
-                console.log('scale doesnt have required characteristic');
-                console.log(characteristics);
+        var found = false;
+        for (var i = 0; i < characteristics.length; i++) {
+            if (characteristics[i].uuid == SCALE_CHARACTERISTIC_UUID) {
+                this.characteristic = characteristics[i];
+                found = true;
+                break;
             }
         }
-        chrome.bluetoothLowEnergy.getCharacteristics(this.serviceId, allCharacteristics);
 
-        document.getElementById('device-status').innerHTML += ' CONN';
+        if (found) {
+            chrome.bluetoothLowEnergy.startCharacteristicNotifications(
+                this.characteristic.instanceId,
+                this.notificationsReady.bind(this));
+        } else {
+            console.log('scale doesnt have required characteristic');
+            console.log(characteristics);
+        }
+    };
+
+    Scale.prototype.notificationsReady = function() {
+        if (chrome.runtime.lastError) {
+            console.log('failed enabling characteristic notifications: ' + chrome.runtime.lastError.message);
+            // FIXME(bp) exit early once this call succeeds on android.
+            //return;
+        }
+
+        console.log('scale ready');
+        this.initialized = true;
+        this.onReady.fire();
+    };
+
+    function PourApp() {
+        this.finder = new ScaleFinder();
+        this.finder.onDiscoveryStateChanged.addListener(updateDiscoveryToggleState);
+    }
+
+    PourApp.prototype.updateDiscoveryToggleState = function(discovering) {
+        UI.getInstance().setDiscoveryToggleState(discovering);
     };
 
     PourApp.prototype.init = function() {
         var self = this;
 
-        var updateAdapterState = function(adapterState) {
-            UI.getInstance().setAdapterState(adapterState.address, adapterState.name);
-            self.updateDiscoveryToggleState(adapterState.discovering);
-            if (chrome.runtime.lastError)
-                console.log(chrome.runtime.lastError.message);
-        };
-
-        chrome.bluetooth.getAdapterState(function (adapterState) {
-            if (chrome.runtime.lastError)
-                console.log(chrome.runtime.lastError.message);
-
-            self.updateDiscoveryToggleState(adapterState.discovering);
-            updateAdapterState(adapterState);
-        });
-
-        var deviceAdded = function(device) {
-            if (!device.uuids || device.uuids.indexOf(SCALE_SERVICE_UUID) < 0)
-                return;
-
-            self.deviceAddress = device.address;
-
-            document.getElementById('device-status').innerHTML = 'discovered: ' + device.name;
-
-            chrome.bluetooth.stopDiscovery(self.logDiscovery.bind(self));
-            chrome.bluetoothLowEnergy.connect(device.address, self.logError);
-        }
-
-        chrome.bluetooth.onAdapterStateChanged.addListener(updateAdapterState);
-        chrome.bluetooth.onDeviceAdded.addListener(deviceAdded);
-        chrome.bluetoothLowEnergy.onServiceAdded.addListener(this.serviceAdded.bind(this));
-
         // Set up discovery toggle button handler
         UI.getInstance().setDiscoveryToggleHandler(function() {
-            if (!self.discovering)
-                chrome.bluetooth.startDiscovery(self.logDiscovery.bind(self));
+            if (!this.discovering)
+                this.finder.startDiscovery();
             else
-                chrome.bluetooth.stopDiscovery(self.logDiscovery.bind(self));
-        });
+                this.finder.stopDiscovery();
+        }.bind(this));
     };
 
     return {
