@@ -33,6 +33,16 @@ var UI = (function() {
         tareButton.disabled = !isEnabled;
     };
 
+    UI.prototype.setRecordState = function(status) {
+        var recordElement = document.getElementById('record-button');
+        recordElement.innerHTML = status;
+    };
+
+    UI.prototype.setRecordEnabled = function(isEnabled) {
+        var recordElement = document.getElementById('record-button');
+        recordElement.disabled = !isEnabled;
+    };
+
     UI.prototype.setDiscoveryToggleHandler = function(handler) {
         var discoveryToggleButton = document.getElementById('discovery-toggle-button');
         discoveryToggleButton.onclick = handler;
@@ -41,7 +51,12 @@ var UI = (function() {
     UI.prototype.setTareHandler = function(handler) {
         var tareButton = document.getElementById('tare-button');
         tareButton.onclick = handler;
-    }
+    };
+
+    UI.prototype.setRecordHandler = function(handler) {
+        var recordButton = document.getElementById('record-button');
+        recordButton.onclick = handler;
+    };
 
     UI.prototype.setWeightDisplay = function(value) {
         var weightDisplay = document.getElementById('weight-display');

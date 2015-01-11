@@ -820,7 +820,45 @@ define('packet',['./constants'], function(constants) {
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-define('scale',['./constants', './event_target', './packet'], function(constants, event_target, packet) {
+define('recorder',[], function() {
+    
+
+    function Recorder(scale) {
+        this.start = Date.now()/1000;
+        this.series = [];
+        this.scale = scale;
+        // for purposes of removing event listener later
+        this.recordCb = this.record.bind(this);
+
+        this.record();
+
+        scale.addEventListener('weightChanged', this.recordCb);
+    }
+
+    Recorder.prototype.stop = function() {
+        this.record();
+        this.scale.removeEventListener('weightChanged', this.recordCb);
+        this.scale = null;
+        this.recordCb = null;
+
+        return this.series;
+    };
+
+    Recorder.prototype.record = function() {
+        var time = Date.now()/1000 - this.start;
+        this.series.push([time, this.scale.weight]);
+    };
+
+    return {
+        Recorder: Recorder,
+    };
+});
+
+// Copyright 2015 Bobby Powers. All rights reserved.
+// Use of this source code is governed by the MIT
+// license that can be found in the LICENSE file.
+
+define('scale',['./constants', './event_target', './packet', './recorder'], function(constants, event_target, packet, recorder) {
     
 
     function Scale(device, service) {
@@ -829,7 +867,8 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         this.device = device;
         this.service = service;
         this.characteristic = null;
-        this.prevWeight = null;
+        this.weight = null;
+        this.recorder = null;
 
         chrome.bluetoothLowEnergy.onCharacteristicValueChanged.addListener(
             this.characteristicValueChanged.bind(this));
@@ -851,8 +890,8 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         }
 
         if (msg.type === constants.MessageType.WEIGHT_RESPONSE) {
-            var shouldDispatch = this.prevWeight !== msg.value;
-            this.prevWeight = msg.value;
+            var shouldDispatch = this.weight !== msg.value;
+            this.weight = msg.value;
 
             if (shouldDispatch)
                 this.dispatchEvent(new CustomEvent('weightChanged', {'detail': {'value': msg.value}}));
@@ -876,7 +915,7 @@ define('scale',['./constants', './event_target', './packet'], function(constants
         return true;
     };
 
-    Scale.prototype.weigh = function() {
+    Scale.prototype.poll = function() {
         if (!this.initialized)
             return false;
 
@@ -924,10 +963,24 @@ define('scale',['./constants', './event_target', './packet'], function(constants
 
         this.initialized = true;
 
-        this.weigh();
-        setInterval(this.weigh.bind(this), 1000);
+        this.poll();
+        setInterval(this.poll.bind(this), 1000);
 
         this.dispatchEvent(new CustomEvent('ready', {'detail': {'scale': this}}));
+    };
+
+    Scale.prototype.startRecording = function() {
+        if (this.recorder)
+            return;
+
+        this.recorder = new recorder.Recorder(this);
+    };
+
+    Scale.prototype.stopRecording = function() {
+        this.series = this.recorder.stop();
+        this.recorder = null;
+
+        return this.series;
     };
 
     return {
@@ -1074,19 +1127,7 @@ define('app',['./scale_finder'], function(scale_finder) {
             this.finder = null;
         }
 
-        bucket.listObjects(function (err, data) {
-            if (err) {
-                document.getElementById('status').innerHTML =
-                    'Could not load objects from S3';
-            } else {
-                document.getElementById('status').innerHTML =
-                    'Loaded ' + data.Contents.length + ' items from S3';
-                for (var i = 0; i < data.Contents.length; i++) {
-                    document.getElementById('objects').innerHTML +=
-                        '<li>' + data.Contents[i].Key + '</li>';
-                }
-            }
-        });
+        this.listRecordings();
     }
 
     App.prototype.finderReady = function() {
@@ -1115,6 +1156,36 @@ define('app',['./scale_finder'], function(scale_finder) {
 
         UI.getInstance().setDiscoveryToggleEnabled(false);
         UI.getInstance().setTareEnabled(true);
+        UI.getInstance().setRecordEnabled(true);
+    };
+
+    App.prototype.postData = function(series) {
+        var name = this.finder.adapterState.name;
+        name = name.replace(/ /g, '_').replace(/'/g, '');
+
+        var key = name + '.' + Date.now() + '.json';
+        var body = JSON.stringify(series);
+
+        bucket.upload({Key: key, Body: body}, function (err, data) {
+            if (err)
+                UI.getInstance().setStatus('failed uploading to s3');
+            else
+                UI.getInstance().setStatus('uploaded data to s3');
+
+            console.log('data:');
+            console.log(data);
+        });
+    };
+
+    App.prototype.listRecordings = function() {
+        bucket.listObjects(function (err, data) {
+            if (err)
+                UI.getInstance().setStatus('Could not load objects from S3');
+            else
+                UI.getInstance().setStatus('Loaded ' + data.Contents.length + ' items from S3');
+            console.log(err);
+            console.log(data);
+        });
     };
 
     App.prototype.init = function() {
@@ -1131,6 +1202,21 @@ define('app',['./scale_finder'], function(scale_finder) {
                 return;
             }
             this.scale.tare();
+        }.bind(this));
+
+        UI.getInstance().setRecordHandler(function() {
+            if (!this.scale) {
+                console.log('ERROR: record without scale.');
+                return;
+            }
+            if (this.scale.recorder) {
+                var series = this.scale.stopRecording();
+                this.postData(series);
+                UI.getInstance().setRecordState('record');
+            } else {
+                this.scale.startRecording();
+                UI.getInstance().setRecordState('stop');
+            }
         }.bind(this));
     };
 
