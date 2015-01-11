@@ -1163,7 +1163,7 @@ define('app',['./scale_finder'], function(scale_finder) {
         var name = this.finder.adapterState.name;
         name = name.replace(/ /g, '_').replace(/'/g, '');
 
-        var key = name + '.' + Date.now() + '.json';
+        var key = name.toLowerCase() + '.' + Date.now() + '.json';
         var body = JSON.stringify(series);
 
         bucket.upload({Key: key, Body: body}, function (err, data) {

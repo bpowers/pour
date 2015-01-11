@@ -11,6 +11,10 @@
         "256": "pour_256.png",
         "512": "pour_512.png"
     },
+    "content_security_policy": "script-src 'self'; object-src 'self'; connect-src 'self' https://pour-app.s3.amazonaws.com;",
+    "permissions": [
+        "https://pour-app.s3.amazonaws.com/"
+    ],
     "app": {
         "background": {
             "scripts": ["background.js"]
