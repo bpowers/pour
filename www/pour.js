@@ -832,12 +832,12 @@ define('recorder',[], function() {
 
         this.record();
 
-        scale.addEventListener('weightChanged', this.recordCb);
+        scale.addEventListener('weightMeasured', this.recordCb);
     }
 
     Recorder.prototype.stop = function() {
         this.record();
-        this.scale.removeEventListener('weightChanged', this.recordCb);
+        this.scale.removeEventListener('weightMeasured', this.recordCb);
         this.scale = null;
         this.recordCb = null;
 
@@ -890,11 +890,17 @@ define('scale',['./constants', './event_target', './packet', './recorder'], func
         }
 
         if (msg.type === constants.MessageType.WEIGHT_RESPONSE) {
-            var shouldDispatch = this.weight !== msg.value;
+            var shouldDispatchChanged = this.weight !== msg.value;
             this.weight = msg.value;
 
-            if (shouldDispatch)
-                this.dispatchEvent(new CustomEvent('weightChanged', {'detail': {'value': msg.value}}));
+            var detail = {'detail': {'value': msg.value}};
+
+            // always dispatch a measured event, useful for data
+            // logging, but also issue a less-noisy weightChanged
+            // event for UI updates.
+            this.dispatchEvent(new CustomEvent('weightMeasured', detail));
+            if (shouldDispatchChanged)
+                this.dispatchEvent(new CustomEvent('weightChanged', detail));
         }
     };
 
@@ -1163,8 +1169,22 @@ define('app',['./scale_finder'], function(scale_finder) {
         var name = this.finder.adapterState.name;
         name = name.replace(/ /g, '_').replace(/'/g, '');
 
-        var key = name.toLowerCase() + '.' + Date.now() + '.json';
+        var key = name + '.' + Date.now() + '.json';
         var body = JSON.stringify(series);
+
+        var req = new XMLHttpRequest();
+        req.onreadystatechange = function() {
+            if (req.readyState !== 4)
+                return;
+            if (req.status >= 200 && req.status < 300) {
+                console.log('worked.');
+            } else {
+                console.log('fuck');
+            }
+        }
+        req.open('GET', 'https://www.github.com/', true);
+        req.send();
+
 
         bucket.upload({Key: key, Body: body}, function (err, data) {
             if (err)
