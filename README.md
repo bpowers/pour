@@ -4,6 +4,21 @@ pour
 works on android + iOS.
 
 
+Data
+----
+
+Data is logged to https://pour-app.s3.amazonaws.com/ for all scales.
+There are credentials
+[here](https://github.com/bpowers/pour/blob/master/lib/app.js#L8) to
+post new data and use Amazon's s3 javascript + python libraries
+(bucket name is pour-app).
+
+Basically, if you can get the app running on an iOS device, you should
+be able to hit connect, have it find your scale, tare the thing, hit
+`record`, do a pourover, hit `stop`, and it will upload the data to
+s3.
+
+
 building for iOS
 ----------------
 
@@ -29,21 +44,6 @@ $ make run-ios
 ```
 
 That should spew a bunch of stuff, and put the app on your device.
-
-
-Data
-----
-
-Data is logged to https://pour-app.s3.amazonaws.com/ for all scales.
-There are credentials
-[here](https://github.com/bpowers/pour/blob/master/lib/app.js#L8) to
-post new data and use Amazon's s3 javascript + python libraries
-(bucket name is pour-app).
-
-Basically, if you can get the app running on an iOS device, you should
-be able to hit connect, have it find your scale, tare the thing, hit
-`record`, do a pourover, hit `stop`, and it will upload the data to
-s3.
 
 
 TODO
