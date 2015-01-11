@@ -23,6 +23,11 @@ var UI = (function() {
         discoveryToggleButton.disabled = !isEnabled;
     };
 
+    UI.prototype.setStatus = function(content) {
+        var statusElement = document.getElementById('status');
+        statusElement.innerHTML = content;
+    };
+
     UI.prototype.setTareEnabled = function(isEnabled) {
         var tareButton = document.getElementById('tare-button');
         tareButton.disabled = !isEnabled;

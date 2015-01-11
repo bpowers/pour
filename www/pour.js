@@ -446,6 +446,23 @@ define('constants',[], function() {
 
     var constants = {};
 
+    constants.MessageType = {
+        NONE: 0,
+        STR: 1,
+        BATTERY: 2,
+        BATTERY_RESPONSE: 3,
+        WEIGHT: 4,
+        WEIGHT_RESPONSE: 5,
+        WEIGHT_RESPONSE2: 6,
+        TARE: 7,
+        SOUND: 8,
+        SOUND_ON: 9,
+        LIGHT_ON: 10,
+        FILE: 11,
+        CUSTOM: 12,
+        SIZE: 13,
+    };
+
     constants.SCALE_SERVICE_UUID = '00001820-0000-1000-8000-00805f9b34fb';
     constants.SCALE_CHARACTERISTIC_UUID = '00002a80-0000-1000-8000-00805f9b34fb';
 
@@ -523,23 +540,6 @@ define('constants',[], function() {
         0x35, 0xFC, 0x82, 0xB9, 0x1F, 0xFE, 0xBC, 0x8A,
         0xBD, 0x58, 0x08, 0x09, 0x19, 0x1A, 0x21, 0x22,
     ];
-
-    constants.MessageType = {
-        NONE: 0,
-        STR: 1,
-        BATTERY: 2,
-        BATTERY_RESPONSE: 3,
-        WEIGHT: 4,
-        WEIGHT_RESPONSE: 5,
-        WEIGHT_RESPONSE2: 6,
-        TARE: 7,
-        SOUND: 8,
-        SOUND_ON: 9,
-        LIGHT_ON: 10,
-        FILE: 11,
-        CUSTOM: 12,
-        SIZE: 13,
-    };
 
     return constants;
 });
@@ -1052,14 +1052,41 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
 define('app',['./scale_finder'], function(scale_finder) {
     
 
+    AWS.config.credentials = new AWS.Credentials({
+        'accessKeyId': 'AKIAJ67FAJ6OJKPQRYAA',
+        'secretAccessKey': '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',
+    });
+    AWS.config.region = 'us-east-1';
+
+    var bucket = new AWS.S3({params: {Bucket: 'pour-app'}});
+
     function App() {
-        this.finder = new scale_finder.ScaleFinder();
-        this.finder.addEventListener('ready',
-                                     this.finderReady.bind(this));
-        this.finder.addEventListener('discoveryStateChanged',
-                                     this.updateDiscoveryToggleState.bind(this));
-        this.finder.addEventListener('scaleAdded',
-                                     this.scaleAdded.bind(this));
+        try {
+            this.finder = new scale_finder.ScaleFinder();
+            this.finder.addEventListener('ready',
+                                         this.finderReady.bind(this));
+            this.finder.addEventListener('discoveryStateChanged',
+                                         this.updateDiscoveryToggleState.bind(this));
+            this.finder.addEventListener('scaleAdded',
+                                         this.scaleAdded.bind(this));
+        } catch (e) {
+            console.log('finder failed: ' + e);
+            this.finder = null;
+        }
+
+        bucket.listObjects(function (err, data) {
+            if (err) {
+                document.getElementById('status').innerHTML =
+                    'Could not load objects from S3';
+            } else {
+                document.getElementById('status').innerHTML =
+                    'Loaded ' + data.Contents.length + ' items from S3';
+                for (var i = 0; i < data.Contents.length; i++) {
+                    document.getElementById('objects').innerHTML +=
+                        '<li>' + data.Contents[i].Key + '</li>';
+                }
+            }
+        });
     }
 
     App.prototype.finderReady = function() {

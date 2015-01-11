@@ -11,7 +11,7 @@
         "Uint8Array": false,
         "UI": false,
 	"setInterval": false,
-	"chrome": false
-	
+	"chrome": false,
+	"AWS": false
     }
 }
