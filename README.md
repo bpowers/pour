@@ -23,7 +23,9 @@ building for iOS
 ----------------
 
 Make sure you have Apple's developer tools installed, and your iOS
-device setup for development.
+device setup for development (build a hello-world iOS device first,
+then maybe the Acaia sample app to make sure everything is working
+alright).
 
 Install `cca`, the commandline tool to package up mobile chrome apps.
 Should be able to do:
