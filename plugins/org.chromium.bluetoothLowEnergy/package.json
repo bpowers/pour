@@ -1,8 +1,11 @@
 {
-    "version": "1.0.0-dev",
-    "name": "org.chromium.bluetoothlowenergy",
-    "cordova_name": "Chrome Apps Bluetooth Low Energy API",
-    "platforms": [],
+    "version": "1.1.1-dev",
+    "name": "org.chromium.bluetooth",
+    "cordova_name": "Chrome Apps Bluetooth API",
+    "platforms": [
+        "android",
+        "ios"
+    ],
     "engines": [
         {
             "name": "cordova",

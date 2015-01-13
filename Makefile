@@ -38,7 +38,9 @@ run-ios: check dist
 	cca run ios --devicereset
 
 run-android: check dist
+#	mkdir -p ./platforms/android/src/org/chromium
 	rsync -av ./plugins/org.chromium.bluetooth/src/android/ ./platforms/android/src/org/chromium
+	rsync -av ./plugins/org.chromium.bluetoothLowEnergy/src/android/ ./platforms/android/src/org/chromium
 	cca run android --device
 
 check: node_modules bower_components

@@ -59,6 +59,14 @@
                             "count": 1
                         },
                         {
+                            "xml": "<feature name=\"ChromeBluetoothSocket\"><param name=\"android-package\" value=\"org.chromium.ChromeBluetoothSocket\" /></feature>",
+                            "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"ChromeBluetoothLowEnergy\"><param name=\"android-package\" value=\"org.chromium.ChromeBluetoothLowEnergy\" /></feature>",
+                            "count": 1
+                        },
+                        {
                             "xml": "<feature name=\"ChromeStorage\"><param name=\"android-package\" value=\"org.chromium.ChromeStorage\" /></feature>",
                             "count": 1
                         },
@@ -121,10 +129,10 @@
         "android.support.v4": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
-        "org.chromium.bluetooth": {
+        "org.chromium.bluetoothsocket": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
-        "org.chromium.bluetoothLowEnergy": {
+        "org.chromium.bluetoothlowenergy": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
         "org.apache.cordova.engine.crosswalk": {
@@ -163,6 +171,9 @@
     },
     "dependent_plugins": {
         "org.chromium.common": {
+            "PACKAGE_NAME": "io.powers.Pour"
+        },
+        "org.chromium.bluetooth": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
         "org.chromium.storage": {

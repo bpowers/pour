@@ -1012,7 +1012,6 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
 
         chrome.bluetooth.onAdapterStateChanged.addListener(this.adapterStateChanged.bind(this));
         chrome.bluetooth.onDeviceAdded.addListener(this.deviceAdded.bind(this));
-        chrome.bluetoothLowEnergy.onServiceAdded.addListener(this.serviceAdded.bind(this));
 
         chrome.bluetooth.getAdapterState(this.adapterStateChanged.bind(this));
     }
@@ -1024,6 +1023,8 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
             console.log('adapter state changed: ' + chrome.runtime.lastError.message);
             return;
         }
+        console.log('adapter state changed');
+        console.log(adapterState);
 
         var shouldDispatchReady = !this.adapterState;
         var shouldDispatchDiscovery = this.adapterState && this.adapterState.discovering !== adapterState.discovering;
@@ -1049,6 +1050,7 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
             return;
         }
         this.devices[device.address] = device;
+        this.currentDevice = device;
 
         chrome.bluetoothLowEnergy.connect(device.address,
                                           {'persistent': true},
@@ -1056,23 +1058,31 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
     };
 
     ScaleFinder.prototype.deviceConnected = function() {
-        if (chrome.runtime.lastError)
+        if (chrome.runtime.lastError) {
             console.log('connect failed: ' + chrome.runtime.lastError.message);
+            return;
+        }
+
+        chrome.bluetoothLowEnergy.getServices(this.currentDevice.address,
+                                              this.servicesAdded.bind(this));
     };
 
-    ScaleFinder.prototype.serviceAdded = function(service) {
-        if (service.uuid !== constants.SCALE_SERVICE_UUID)
-            return;
+    ScaleFinder.prototype.servicesAdded = function(services) {
+        for (var i in services) {
+            var service = services[i];
+            if (service.uuid !== constants.SCALE_SERVICE_UUID)
+                continue;
 
-        var device = this.devices[service.deviceAddress];
-        var scale = new Scale(device, service);
-        this.scales[device.address] = scale;
-        var readyCallback = this.scaleReady.bind(this);
-        this.scaleReadyCallbacks[scale] = readyCallback;
+            var device = this.devices[service.deviceAddress];
+            var scale = new Scale(device, service);
+            this.scales[device.address] = scale;
+            var readyCallback = this.scaleReady.bind(this);
+            this.scaleReadyCallbacks[scale] = readyCallback;
 
-        // to simplify development elsewhere, fire the ScaleFinder's
-        // scaleAdded event after the scale is ready to be used.
-        scale.addEventListener('ready', readyCallback);
+            // to simplify development elsewhere, fire the ScaleFinder's
+            // scaleAdded event after the scale is ready to be used.
+            scale.addEventListener('ready', readyCallback);
+        }
     };
 
     ScaleFinder.prototype.scaleReady = function(event) {
@@ -1154,11 +1164,11 @@ define('app',['./scale_finder'], function(scale_finder) {
     };
 
     App.prototype.scaleAdded = function(event) {
+        this.finder.stopDiscovery();
+
         this.scale = event.detail.scale;
         this.scale.addEventListener('weightChanged',
                                     this.weightChanged.bind(this));
-
-        this.finder.stopDiscovery();
 
         UI.getInstance().setDiscoveryToggleEnabled(false);
         UI.getInstance().setTareEnabled(true);
