@@ -630,7 +630,7 @@ public class ChromeBluetoothLowEnergy extends CordovaPlugin {
     // on characteristics.
     private final static String CLIENT_CHARACTERISTIC_CONFIG =
         "00002902-0000-1000-8000-00805f9b34fb";
-    private final static int CONNECTION_TIMEOUT = 2000;
+    private final static int CONNECTION_TIMEOUT = 5000;
 
     private final ScanResult bleScanResult;
 

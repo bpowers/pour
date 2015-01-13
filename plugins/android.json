@@ -59,6 +59,10 @@
                             "count": 1
                         },
                         {
+                            "xml": "<feature name=\"ChromeBluetoothLowEnergy\"><param name=\"android-package\" value=\"org.chromium.ChromeBluetoothLowEnergy\" /></feature>",
+                            "count": 1
+                        },
+                        {
                             "xml": "<feature name=\"ChromeStorage\"><param name=\"android-package\" value=\"org.chromium.ChromeStorage\" /></feature>",
                             "count": 1
                         },
@@ -124,7 +128,7 @@
         "org.chromium.bluetooth": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
-        "org.chromium.bluetoothLowEnergy": {
+        "org.chromium.bluetoothlowenergy": {
             "PACKAGE_NAME": "io.powers.Pour"
         },
         "org.apache.cordova.engine.crosswalk": {

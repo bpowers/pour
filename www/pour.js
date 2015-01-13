@@ -1024,6 +1024,8 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
             console.log('adapter state changed: ' + chrome.runtime.lastError.message);
             return;
         }
+        console.log('adapter state changed');
+        console.log(adapterState);
 
         var shouldDispatchReady = !this.adapterState;
         var shouldDispatchDiscovery = this.adapterState && this.adapterState.discovering !== adapterState.discovering;
@@ -1041,6 +1043,8 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
     };
 
     ScaleFinder.prototype.deviceAdded = function(device) {
+        console.log('device added');
+        console.log(device);
         if (!device.uuids || device.uuids.indexOf(constants.SCALE_SERVICE_UUID) < 0)
             return;
 
