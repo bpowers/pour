@@ -807,9 +807,30 @@ define('packet',['./constants'], function(constants) {
         return encode(MessageType.CUSTOM, 0, payload);
     };
 
+    var encodeStartTimer = function() {
+        var payload = [0x5];
+
+        return encode(MessageType.CUSTOM, 0, payload);
+    };
+
+    var encodePauseTimer = function() {
+        var payload = [0x6];
+
+        return encode(MessageType.CUSTOM, 0, payload);
+    };
+
+    var encodeStopTimer = function() {
+        var payload = [0x7];
+
+        return encode(MessageType.CUSTOM, 0, payload);
+    };
+
     return {
         encodeTare: encodeTare,
         encodeWeight: encodeWeight,
+        encodeStartTimer: encodeStartTimer,
+        encodePauseTimer: encodePauseTimer,
+        encodeStopTimer: encodeStopTimer,
         decode: decode,
         setSequenceId: setSequenceId,
         getSequenceId: getSequenceId,
@@ -914,6 +935,42 @@ define('scale',['./constants', './event_target', './packet', './recorder'], func
             return false;
 
         var msg = packet.encodeTare();
+
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, msg, this.logError.bind(this));
+
+        return true;
+    };
+
+    Scale.prototype.startTimer = function() {
+        if (!this.initialized)
+            return false;
+
+        var msg = packet.encodeStartTimer();
+
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, msg, this.logError.bind(this));
+
+        return true;
+    };
+
+    Scale.prototype.pauseTimer = function() {
+        if (!this.initialized)
+            return false;
+
+        var msg = packet.encodePauseTimer();
+
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, msg, this.logError.bind(this));
+
+        return true;
+    };
+
+    Scale.prototype.stopTimer = function() {
+        if (!this.initialized)
+            return false;
+
+        var msg = packet.encodeStopTimer();
 
         chrome.bluetoothLowEnergy.writeCharacteristicValue(
             this.characteristic.instanceId, msg, this.logError.bind(this));
