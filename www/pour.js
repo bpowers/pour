@@ -825,12 +825,26 @@ define('packet',['./constants'], function(constants) {
         return encode(MessageType.CUSTOM, 0, payload);
     };
 
+    var encodeGetTimer = function(count) {
+        if (!count)
+            count = 20;
+        var payload = [0x8, count & 0xff];
+
+        return encode(MessageType.CUSTOM, 0, payload);
+    };
+
+    var encodeGetBattery = function() {
+        return encode(MessageType.BATTERY, 0, []);
+    };
+
     return {
         encodeTare: encodeTare,
         encodeWeight: encodeWeight,
         encodeStartTimer: encodeStartTimer,
         encodePauseTimer: encodePauseTimer,
         encodeStopTimer: encodeStopTimer,
+        encodeGetTimer: encodeGetTimer,
+        encodeGetBattery: encodeGetBattery,
         decode: decode,
         setSequenceId: setSequenceId,
         getSequenceId: getSequenceId,
@@ -911,10 +925,11 @@ define('scale',['./constants', './event_target', './packet', './recorder'], func
         }
 
         if (msg.type === constants.MessageType.WEIGHT_RESPONSE) {
+            var prevWeight = this.weight;
             var shouldDispatchChanged = this.weight !== msg.value;
             this.weight = msg.value;
 
-            var detail = {'detail': {'value': msg.value}};
+            var detail = {'detail': {'value': msg.value, 'previous': prevWeight}};
 
             // always dispatch a measured event, useful for data
             // logging, but also issue a less-noisy weightChanged
@@ -922,8 +937,21 @@ define('scale',['./constants', './event_target', './packet', './recorder'], func
             this.dispatchEvent(new CustomEvent('weightMeasured', detail));
             if (shouldDispatchChanged)
                 this.dispatchEvent(new CustomEvent('weightChanged', detail));
+        } else if (msg.type === constants.MessageType.BATTERY_RESPONSE) {
+            var cb = this.batteryCb;
+            this.batteryCb = null;
+            if (cb)
+                cb(msg.payload/100);
+        } else {
+            console.log('non-weight response');
+            console.log(msg);
         }
     };
+
+    Scale.prototype.disconnect = function() {
+        this.initialized = false;
+        chrome.bluetoothLowEnergy.disconnect(this.device.address);
+    }
 
     Scale.prototype.logError = function() {
         if (chrome.runtime.lastError)
@@ -971,6 +999,35 @@ define('scale',['./constants', './event_target', './packet', './recorder'], func
             return false;
 
         var msg = packet.encodeStopTimer();
+
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, msg, this.logError.bind(this));
+
+        return true;
+    };
+
+    Scale.prototype.getTimer = function(count) {
+        if (!this.initialized)
+            return false;
+
+        if (!count)
+            count = 1;
+
+        var msg = packet.encodeGetTimer(count);
+
+        chrome.bluetoothLowEnergy.writeCharacteristicValue(
+            this.characteristic.instanceId, msg, this.logError.bind(this));
+
+        return true;
+    };
+
+    Scale.prototype.getBattery = function(cb) {
+        if (!this.initialized)
+            return false;
+
+        this.batteryCb = cb;
+
+        var msg = packet.encodeGetBattery();
 
         chrome.bluetoothLowEnergy.writeCharacteristicValue(
             this.characteristic.instanceId, msg, this.logError.bind(this));
@@ -1199,6 +1256,7 @@ define('app',['./scale_finder'], function(scale_finder) {
             console.log('finder failed: ' + e);
             this.finder = null;
         }
+        this.waitingToStart = false;
 
         this.listRecordings();
     }
@@ -1216,6 +1274,12 @@ define('app',['./scale_finder'], function(scale_finder) {
 
     App.prototype.weightChanged = function(event) {
         var value = event.detail.value;
+        var previous = event.detail.previous;
+
+        if (this.waitingToStart && previous === 0 && value) {
+            this.scale.startTimer();
+            this.waitingToStart = false;
+        }
 
         UI.getInstance().setWeightDisplay(value);
     };
@@ -1227,7 +1291,9 @@ define('app',['./scale_finder'], function(scale_finder) {
         this.scale.addEventListener('weightChanged',
                                     this.weightChanged.bind(this));
 
-        UI.getInstance().setDiscoveryToggleEnabled(false);
+        this.scale.getBattery(function(level) {
+            UI.getInstance().setBatteryLevel(level);
+        });
         UI.getInstance().setTareEnabled(true);
         UI.getInstance().setRecordEnabled(true);
     };
@@ -1255,7 +1321,7 @@ define('app',['./scale_finder'], function(scale_finder) {
             if (err)
                 UI.getInstance().setStatus('Could not load objects from S3');
             else
-                UI.getInstance().setStatus('Loaded ' + data.Contents.length + ' items from S3');
+                UI.getInstance().setStatus('Connected to S3 for data storage.');
             console.log(err);
             console.log(data);
         });
@@ -1263,7 +1329,12 @@ define('app',['./scale_finder'], function(scale_finder) {
 
     App.prototype.init = function() {
         UI.getInstance().setDiscoveryToggleHandler(function() {
-            if (!this.discovering)
+            if (this.scale) {
+                this.scale.disconnect();
+                this.scale = null;
+                UI.getInstance().setDiscoveryToggleState(this.finder.adapterState.discovering, false);
+            }
+            if (!this.finder.adapterState.discovering)
                 this.finder.startDiscovery();
             else
                 this.finder.stopDiscovery();
@@ -1285,8 +1356,10 @@ define('app',['./scale_finder'], function(scale_finder) {
             if (this.scale.recorder) {
                 var series = this.scale.stopRecording();
                 this.postData(series);
+                this.scale.stopTimer();
                 UI.getInstance().setRecordState('record');
             } else {
+                this.waitingToStart = true;
                 this.scale.startRecording();
                 UI.getInstance().setRecordState('stop');
             }

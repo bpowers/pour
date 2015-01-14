@@ -12,7 +12,7 @@ var UI = (function() {
         if (isDiscoverying) {
             discoveryToggleButton.innerHTML = 'cancel';
         } else if (haveScale) {
-            discoveryToggleButton.innerHTML = 'connected';
+            discoveryToggleButton.innerHTML = 'disconnect';
         } else {
             discoveryToggleButton.innerHTML = 'connect';
         }
@@ -64,8 +64,13 @@ var UI = (function() {
         weightDisplay.innerHTML = '' + value;
     };
 
+    UI.prototype.setBatteryLevel = function(value) {
+        var batteryDisplay = document.getElementById('battery-display');
+
+        batteryDisplay.innerHTML = '' + (value*100) + '%';
+    };
+
     UI.prototype.setAdapterState = function(address, name) {
-        var addressField = document.getElementById('adapter-address');
         var nameField = document.getElementById('adapter-name');
 
         var setAdapterField = function (field, value) {
@@ -73,7 +78,6 @@ var UI = (function() {
             field.appendChild(document.createTextNode(value));
         };
 
-        setAdapterField(addressField, address ? address : 'unknown');
         setAdapterField(nameField, name ? name : 'Local Adapter');
     };
 
