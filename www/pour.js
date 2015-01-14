@@ -1328,11 +1328,18 @@ define('app',['./scale_finder'], function(scale_finder) {
     };
 
     App.prototype.init = function() {
+        // FIXME: this is no longer a discovery toggle - it is also
+        // disconnect.  naming is now wrong.
         UI.getInstance().setDiscoveryToggleHandler(function() {
             if (this.scale) {
                 this.scale.disconnect();
                 this.scale = null;
                 UI.getInstance().setDiscoveryToggleState(this.finder.adapterState.discovering, false);
+                // FIXME: re-connect doesn't work, because the scale
+                // is already a known device.  need to implement
+                // iterating through known devices in ScaleFinder.
+                UI.getInstance().setDiscoveryToggleEnabled(false);
+                return;
             }
             if (!this.finder.adapterState.discovering)
                 this.finder.startDiscovery();
