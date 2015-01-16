@@ -4,7 +4,7 @@
   "description": "make excellent coffee",
   "homepage": "https://github.com/bpowers/pour",
   "authors": [
-      "Bobby Powers <bobbypowers@gmail.com>"
+    "Bobby Powers <bobbypowers@gmail.com>"
   ],
   "main": "dist/pour.min.js",
   "keywords": [
@@ -18,7 +18,10 @@
     "bower_components",
     "test"
   ],
-  "dependencies": {},
+  "dependencies": {
+    "topeka-elements": "Polymer/topeka-elements#~0.5.2",
+    "core-icons": "Polymer/core-icons#~0.5.2"
+  },
   "devDependencies": {
     "almond": "~0.3.0"
   }

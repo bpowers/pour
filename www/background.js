@@ -1,5 +1,5 @@
 chrome.app.runtime.onLaunched.addListener(function() {
-  chrome.app.window.create('main.html', {
+  chrome.app.window.create('build.html', {
     'innerBounds': {
       'width': 635,
       'height': 370,
