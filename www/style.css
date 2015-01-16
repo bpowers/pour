@@ -9,10 +9,6 @@ body {
   box-shadow: 0 0 5px #858585;
 }
 
-#header img {
-  width: 50px;
-}
-
 #weight-display {
   font-size: 36pt;
   text-align: center;
