@@ -1126,6 +1126,7 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
 
         chrome.bluetooth.onAdapterStateChanged.addListener(this.adapterStateChanged.bind(this));
         chrome.bluetooth.onDeviceAdded.addListener(this.deviceAdded.bind(this));
+        chrome.bluetoothLowEnergy.onServiceAdded.addListener(this.serviceAdded.bind(this));
 
         chrome.bluetooth.getAdapterState(this.adapterStateChanged.bind(this));
     }
@@ -1181,21 +1182,29 @@ define('scale_finder',['./constants', './event_target', './scale'], function(con
                                               this.servicesAdded.bind(this));
     };
 
+    ScaleFinder.prototype.serviceAdded = function(service) {
+        if (service.uuid !== constants.SCALE_SERVICE_UUID)
+            return;
+
+        var device = this.devices[service.deviceAddress];
+        if (device.address in this.scales) {
+            console.log('rediscovery of ' + device.address);
+            return;
+        }
+        var scale = new Scale(device, service);
+        this.scales[device.address] = scale;
+        var readyCallback = this.scaleReady.bind(this);
+        this.scaleReadyCallbacks[scale] = readyCallback;
+
+        // to simplify development elsewhere, fire the ScaleFinder's
+        // scaleAdded event after the scale is ready to be used.
+        scale.addEventListener('ready', readyCallback);
+    };
+
     ScaleFinder.prototype.servicesAdded = function(services) {
         for (var i in services) {
             var service = services[i];
-            if (service.uuid !== constants.SCALE_SERVICE_UUID)
-                continue;
-
-            var device = this.devices[service.deviceAddress];
-            var scale = new Scale(device, service);
-            this.scales[device.address] = scale;
-            var readyCallback = this.scaleReady.bind(this);
-            this.scaleReadyCallbacks[scale] = readyCallback;
-
-            // to simplify development elsewhere, fire the ScaleFinder's
-            // scaleAdded event after the scale is ready to be used.
-            scale.addEventListener('ready', readyCallback);
+            this.serviceAdded(service);
         }
     };
 
