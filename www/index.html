@@ -45,6 +45,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <!--
   <link rel="import" href="components/font-roboto/roboto.html">
   -->
+  <link rel="import" href="components/polymer/polymer.html">
+
   <link rel="import" href="polyfills/fonts/roboto.html">
   <link rel="import" href="components/core-icons/core-icons.html">
   <link rel="import" href="components/core-icons/av-icons.html">
@@ -53,19 +55,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="pour-app.html">
   <link rel="import" href="components/topeka-elements/theme.html">
 
-  <script>
-    if (navigator.serviceWorker) {
-      // Register our ServiceWorker
-      navigator.serviceWorker.register("sw.js");
-    }
-  </script>
-
 </head>
 <body>
 
   <template is="auto-binding">
-    <pour-datasource bucket="pour-app.s3.amazonaws.com" manager="{{manager}}" drippers="{{drippers}}" beans="{{beans}}"></topeka-datasource>
-    <pour-app fit manager="{{manager}}" drippers="{{drippers}}" beans="{{beans}}" touch-action="auto"></topeka-app>
+    <pour-datasource bucket="pour-app.s3.amazonaws.com" manager="{{manager}}" drippers="{{drippers}}" beans="{{beans}}"></pour-datasource>
+    <pour-app fit manager="{{manager}}" drippers="{{drippers}}" beans="{{beans}}" touch-action="auto"></pour-app>
   </template>
 
 </body>

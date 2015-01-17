@@ -8,14 +8,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="bower_components/core-ajax/core-ajax.html">
-<link rel="import" href="bower_components/firebase-element/firebase-element.html">
-<link rel="import" href="bower_components/firebase-element/firebase-login.html">
 
-<polymer-element name="pour-datasource" hidden>
+<polymer-element name="pour-datasource" attributes="bucket" hidden>
     <template>
-
-        <!-- <core-ajax auto handleAs="json" url="{{url}}" response="{{categories}}"></core-ajax>  -->
-
     </template>
     <script>
 
@@ -28,6 +23,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         ready: function() {
+	    console.log('bucket: ' + this.bucket);
+
             window.addEventListener('offline', function() {
             });
             window.addEventListener('online', function() {

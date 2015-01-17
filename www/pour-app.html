@@ -18,186 +18,102 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="bower_components/core-animated-pages/transitions/tile-cascade.html">
 <link rel="import" href="bower_components/core-media-query/core-media-query.html">
 
-<polymer-element name="pour-app" attributes="manager drippers beans" vertical layout>
-<template>
+<polymer-element name="pour-app" attributes="selected manager drippers beans" vertical layout>
+    <template>
 
-  <link rel="stylesheet" href="pour-app.css">
-  
-  <core-animated-pages selected="{{selected}}" transitions="cross-fade cross-fade-delayed scale-up slide-up slide-up-offscreen slide-down tile-cascade hero-transition" flex auto on-core-animated-pages-transition-end="{{transitionEndAction}}">
-    
-    <div name="splash">
-      <span fit class="splash {{ {wide: wide} | tokenList }}" cross-fade></span>
-    </div>
-    
-    <topeka-categories id="categories" name="categories" user="{{user}}" allScores="{{allScores}}"
-      categories="{{categories}}" category="{{category}}" wide="{{wide}}" 
-      on-core-activate="{{categorySelect}}"></topeka-categories>
-  
-    <topeka-category id="category" name="category" user="{{user}}" category="{{category}}" allScores="{{allScores}}" wide="{{wide}}"></topeka-category>
-      
-    <topeka-leaderboard name="leaderboard" user="{{user}}" wide="{{wide}}" disabled="{{disableLeaderboard}}"></topeka-leaderboard>
+        <link rel="stylesheet" href="pour-app.css">
 
-    <topeka-profile id="profile" name="profile" user="{{user}}" wide="{{wide}}"></topeka-profile>
-    
-  </core-animated-pages>
-  
-  <core-media-query query="min-width: {{responsiveWidth}}" queryMatches="{{wide}}"></core-media-query>
+        <core-animated-pages selected="{{selected}}" transitions="cross-fade cross-fade-delayed scale-up slide-up slide-up-offscreen slide-down tile-cascade hero-transition" flex auto on-core-animated-pages-transition-end="{{transitionEndAction}}">
 
-</template>
-<script>
+            <div name="splash">
+                <span fit class="splash {{ {wide: wide} | tokenList }}" cross-fade></span>
+            </div>
 
-(function() {
+        </core-animated-pages>
 
-  window.setTopekaTransitionSpeed = function(ms) {
-    CoreStyle.g.transitions.duration = ms + 'ms';
-    CoreStyle.g.transitions.scaleDelay = CoreStyle.g.transitions.duration;  
-  }
+        <core-media-query query="min-width: {{responsiveWidth}}" queryMatches="{{wide}}"></core-media-query>
 
-  setTopekaTransitionSpeed(350);
+    </template>
+    <script>
 
-  Polymer('pour-app', {
-    
-    selected: 'splash',
+    (function() {
 
-    responsiveWidth: '900px',
-    
-    connected: false,
-    
-    minSplashTime: 1000,
-
-    disableLeaderboard: false,
-    
-    observe: {
-      'user': 'startup'
-    },
-
-    ready: function() {
-      this.test = window.location.search.indexOf('test') >= 0;
-      this.offline = this.test || window.location.search.indexOf('offline') >= 0;
-
-      this.readyTime = Date.now();
-
-      var dummyState = {app: 'topeka'};
-      // set up history state
-      if (!history.state) {
-        history.pushState(dummyState, '');
-      }
-
-      // "back" button will show categories, unless in profile screen
-      window.onpopstate = function() {
-        if (this.selected !== 'profile') {
-          this.showCategories();
+        window.setTopekaTransitionSpeed = function(ms) {
+            CoreStyle.g.transitions.duration = ms + 'ms';
+            CoreStyle.g.transitions.scaleDelay = CoreStyle.g.transitions.duration;
         }
-        // repopulate history state so we get the popstate event again
-        history.pushState(dummyState, '');
-      }.bind(this);
 
-      if (!this.user) {
-        this.startup();
-      }
-    },
+        setTopekaTransitionSpeed(350);
 
-    eventDelegates: {
-      'main': 'showCategories',
-      'score-update': 'computeScore'
-    },
+        Polymer('pour-app', {
 
-    showCategories: function() {
-      this.selected = 'categories';
-    },
-    
-    showCategory: function() {
-      this.selected = 'category';
-    },
-    
-    showLeaderboard: function() {
-      this.selected = 'leaderboard';
-    },
-    
-    showProfile: function() {
-      this.selected = 'profile';
-      this.$.profile.userDefaults = this.user;
-    },
-    
-    categorySelect: function() {
-      if (this.category) {
-        var n = this.category.name;
-        if (n === 'leaderboard') {
-          this.showLeaderboard();
-        } else if (n === 'profile') {
-          this.showProfile();
-        } else {
-          this.showCategory();
-        }
-      }
-    },
+            selected: 'splash',
 
-    loadScores: function() {
-      var pts = 0;
-      try {
-        this.allScores = JSON.parse(localStorage.getItem('topeka-scores'));
-        if (!this.allScores) {
-          this.resetScores();
-        } else {
-          for (var n in this.allScores) {
-            pts += this.sumPts(this.allScores[n]);
-          }
-          this.user.score = pts;
-        }
-      } catch (e) {
-        this.resetScores();
-      }
-    },
+            responsiveWidth: '900px',
 
-    computeScore: function() {
-      if (this.user) {
-        var pts = 0;
-        for (var n in this.allScores) {
-          pts += this.sumPts(this.allScores[n]);
-        }
-        this.user.score = pts;
-        localStorage.setItem('topeka-scores', JSON.stringify(this.allScores));
-      }
-    },
+            minSplashTime: 1000,
 
-    resetScores: function() {
-      localStorage.removeItem('topeka-scores');
-      if (this.user) {
-        this.user.score = 0;
-      }
-      this.allScores = {};
-    },
-    
-    sumPts: function(s) {
-      var pts = 0;
-      for (var i = 0; i < s.length; i++) {
-        pts += (s[i] || 0);
-      }
-      return pts;
-    },
-    
-    startup: function() {
-      var elapsed = Date.now() - this.readyTime;
-      var t = this.minSplashTime - elapsed;
-      this.async('completeStartup', null, t > 0 ? t : 0);
-    },
-    
-    completeStartup: function() {
-      if (this.user) {
-        this.loadScores();
-        this.selected = 'categories';
-      } else {
-        this.resetScores();
-        this.selected = 'profile';
-      }
-    },
+            observe: {
+            },
 
-    transitionEndAction: function() {
-      this.disableLeaderboard = (this.selected !== 'leaderboard');
-    }
-    
-  });
+            ready: function() {
+                this.readyTime = Date.now();
 
-})();
-</script>
+                var dummyState = {app: 'pour'};
+                // set up history state
+                if (!history.state) {
+                    history.pushState(dummyState, '');
+                }
+
+                // "back" button will show categories, unless in profile screen
+                window.onpopstate = function() {
+                    if (this.selected !== 'profile') {
+                        this.showCategories();
+                    }
+                    // repopulate history state so we get the popstate event again
+                    history.pushState(dummyState, '');
+                }.bind(this);
+            },
+
+            eventDelegates: {
+                'main': 'showCategories',
+            },
+
+            showCategories: function() {
+                this.selected = 'categories';
+            },
+
+            showCategory: function() {
+                this.selected = 'category';
+            },
+
+            showLeaderboard: function() {
+                this.selected = 'leaderboard';
+            },
+
+            showProfile: function() {
+                this.selected = 'profile';
+            },
+
+            startup: function() {
+                var elapsed = Date.now() - this.readyTime;
+                var t = this.minSplashTime - elapsed;
+                this.async('completeStartup', null, t > 0 ? t : 0);
+            },
+
+            completeStartup: function() {
+                if (this.user) {
+                    this.loadScores();
+                    this.selected = 'categories';
+                } else {
+                    this.resetScores();
+                    this.selected = 'profile';
+                }
+            },
+
+            transitionEndAction: function() {
+            }
+        });
+    })();
+    </script>
 </polymer-element>

@@ -14,10 +14,10 @@ html, body {
 
 body {
   margin: 0;
-  background-color: #eee;
+  background-color: #4e342e;
   background-repeat: no-repeat;
   background-position: 50%;
-  background-image: url(images/splash.svg);
+  background-image: url(images/pour_512.svg);
   font-family: "RobotoDraft", sans-serif;
   color: #444;
   fill: #444;

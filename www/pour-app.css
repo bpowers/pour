@@ -12,10 +12,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 }
 
 .splash {
-  background-color: #eee;
+  background-color: #4e342e;
   background-repeat: no-repeat;
   background-position: 50%;
-  background-image: url(images/splash.svg);
+  background-image: url(images/pour_512.svg);
 }
 
 .splash.wide {
