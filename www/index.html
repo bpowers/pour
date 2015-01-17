@@ -9,7 +9,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 <html>
 <head>
-  <title>Quiz App</title>
+  <title>Pour</title>
 
   <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -20,12 +20,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <meta name="format-detection" content="telephone=no">
 
   <link rel="shortcut icon" href="favicon.ico">
-  <link rel="icon" sizes="196x196" href="icons/icon-196.png">
+  <link rel="icon" sizes="196x196" href="pour-196.png">
   <link rel="apple-touch-icon" sizes="152x152" href="icons/iPad@2x.png">
   <link rel="apple-touch-icon" sizes="144x144" href="icons/Icon-72@2x.png">
   <link rel="apple-touch-icon" sizes="120x120" href="icons/iPhone@2x.png">
 
-  <meta name="application-name" content="Quiz App">
+  <meta name="application-name" content="Pour">
 
   <!--
   Chrome 35 has old :host behavior before :host-context addition.
@@ -49,8 +49,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
   <link rel="import" href="components/core-icons/core-icons.html">
   <link rel="import" href="components/core-icons/av-icons.html">
   <link rel="import" href="components/core-icons/social-icons.html">
-  <link rel="import" href="components/topeka-elements/topeka-datasource.html">
-  <link rel="import" href="components/topeka-elements/topeka-app.html">
+  <link rel="import" href="pour-datasource.html">
+  <link rel="import" href="pour-app.html">
   <link rel="import" href="components/topeka-elements/theme.html">
 
   <script>
@@ -64,8 +64,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <body>
 
   <template is="auto-binding">
-    <topeka-datasource url="components/topeka-elements/categories.json" user="{{user}}" categories="{{categories}}" connected="{{connected}}"></topeka-datasource>
-    <topeka-app fit user="{{user}}" categories="{{categories}}" connected="{{connected}}" touch-action="auto"></topeka-app>
+    <pour-datasource bucket="pour-app.s3.amazonaws.com" manager="{{manager}}" drippers="{{drippers}}" beans="{{beans}}"></topeka-datasource>
+    <pour-app fit manager="{{manager}}" drippers="{{drippers}}" beans="{{beans}}" touch-action="auto"></topeka-app>
   </template>
 
 </body>

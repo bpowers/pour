@@ -1,0 +1,39 @@
+<!--
+Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="bower_components/core-ajax/core-ajax.html">
+<link rel="import" href="bower_components/firebase-element/firebase-element.html">
+<link rel="import" href="bower_components/firebase-element/firebase-login.html">
+
+<polymer-element name="pour-datasource" hidden>
+    <template>
+
+        <!-- <core-ajax auto handleAs="json" url="{{url}}" response="{{categories}}"></core-ajax>  -->
+
+    </template>
+    <script>
+
+    Polymer('pour-datasource', {
+
+        publish: {
+            manager: null,
+            drippers: null,
+            beans: null,
+        },
+
+        ready: function() {
+            window.addEventListener('offline', function() {
+            });
+            window.addEventListener('online', function() {
+            });
+        },
+    });
+
+    </script>
+</polymer-element>
