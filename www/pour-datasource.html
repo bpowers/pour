@@ -8,6 +8,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 -->
 
 <link rel="import" href="components/core-ajax/core-ajax.html">
+<link rel="import" href="components/btscale/btscale.html">
 
 <polymer-element name="pour-datasource" attributes="bucket" hidden>
     <template>
@@ -17,7 +18,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     Polymer('pour-datasource', {
 
         publish: {
-            manager: null,
+            manager: new btscale.ScaleFinder(),
             drippers: null,
             beans: null,
         },
