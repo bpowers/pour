@@ -1,13 +1,14 @@
 {
-  "name": "pour",
+  "name": "btscale",
   "version": "0.1.0",
-  "description": "make excellent coffee",
-  "homepage": "https://github.com/bpowers/pour",
+  "description": "access Bluetooth LE scales from Javascript",
+  "homepage": "https://github.com/bpowers/btscale",
   "authors": [
     "Bobby Powers <bobbypowers@gmail.com>"
   ],
-  "main": "dist/pour.min.js",
+  "main": "dist/btscale.min.js",
   "keywords": [
+    "bluetooth",
     "coffee",
     "acaia"
   ],
@@ -15,13 +16,10 @@
   "ignore": [
     "**/.*",
     "node_modules",
-    "bower_components",
+    "lib/bower_components",
     "test"
   ],
   "dependencies": {
-    "topeka-elements": "Polymer/topeka-elements#~0.5.2",
-    "core-icons": "Polymer/core-icons#~0.5.2",
-    "btscale": "~0.1.0"
   },
   "devDependencies": {
     "almond": "~0.3.0"

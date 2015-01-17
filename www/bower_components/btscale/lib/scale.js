@@ -60,7 +60,7 @@ define(['./constants', './event_target', './packet', './recorder'], function(con
     Scale.prototype.disconnect = function() {
         this.initialized = false;
         chrome.bluetoothLowEnergy.disconnect(this.device.address);
-    }
+    };
 
     Scale.prototype.logError = function() {
         if (chrome.runtime.lastError)
