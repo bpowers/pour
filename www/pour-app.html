@@ -17,6 +17,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="components/core-animated-pages/transitions/scale-up.html">
 <link rel="import" href="components/core-animated-pages/transitions/tile-cascade.html">
 <link rel="import" href="components/core-media-query/core-media-query.html">
+<link rel="import" href="pour-actions.html">
 
 <polymer-element name="pour-app" attributes="selected manager drippers beans" vertical layout>
     <template>
@@ -29,6 +30,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                 <span fit class="splash {{ {wide: wide} | tokenList }}" cross-fade></span>
             </div>
 
+            <pour-actions id="actions" name="actions" drippers="{{drippers}}" beans="{{beans}}"
+                          selection="{{selection}}" wide="{{wide}}"
+                          on-core-activate="{{dripperSelect}}"></pour-actions>
+
+
         </core-animated-pages>
 
         <core-media-query query="min-width: {{responsiveWidth}}" queryMatches="{{wide}}"></core-media-query>
@@ -38,12 +44,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     (function() {
 
-        window.setTopekaTransitionSpeed = function(ms) {
+        window.setPourTransitionSpeed = function(ms) {
             CoreStyle.g.transitions.duration = ms + 'ms';
             CoreStyle.g.transitions.scaleDelay = CoreStyle.g.transitions.duration;
         }
 
-        setTopekaTransitionSpeed(350);
+        setPourTransitionSpeed(350);
 
         Polymer('pour-app', {
 
@@ -54,6 +60,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             minSplashTime: 1000,
 
             observe: {
+                'manager scales': 'scalesChanged',
             },
 
             ready: function() {
@@ -73,7 +80,27 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                     // repopulate history state so we get the popstate event again
                     history.pushState(dummyState, '');
                 }.bind(this);
+
+		this.startup();
             },
+
+            scalesChanged: function() {
+                console.log('scales changed');
+            },
+
+	    dripperSelect: function() {
+		console.log('dripperSelect');
+		if (this.selection) {
+		    var n = this.selection.name;
+		    if (n === 'leaderboard') {
+			this.showLeaderboard();
+		    } else if (n === 'profile') {
+			this.showProfile();
+		    } else {
+			this.showCategory();
+		    }
+		}
+	    },
 
             eventDelegates: {
                 'main': 'showCategories',
@@ -102,13 +129,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             },
 
             completeStartup: function() {
-                if (this.user) {
-                    this.loadScores();
-                    this.selected = 'categories';
-                } else {
-                    this.resetScores();
-                    this.selected = 'profile';
-                }
+		this.selected = 'actions';
             },
 
             transitionEndAction: function() {
