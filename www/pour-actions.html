@@ -10,124 +10,186 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="components/topeka-elements/avatars.html">
 <link rel="import" href="components/topeka-elements/category-images.html">
 <link rel="import" href="components/topeka-elements/category-icons.html">
+<link rel="import" href="components/core-drawer-panel/core-drawer-panel.html">
 <link rel="import" href="components/core-toolbar/core-toolbar.html">
 <link rel="import" href="components/core-selector/core-selector.html">
 <link rel="import" href="components/core-icons/device-icons.html">
 <link rel="import" href="components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="components/paper-spinner/paper-spinner.html">
 
-<polymer-element name="pour-actions" attributes="scale drippers beans selection wide" vertical layout>
-<template>
+<polymer-element name="pour-actions" attributes="rwidth scale drippers beans selection wide" vertical layout>
+    <template>
 
-  <link rel="stylesheet" href="pour-actions.css">
-  <link rel="stylesheet" href="pour-category-themes.css">
+        <link rel="stylesheet" href="pour-actions.css">
+        <link rel="stylesheet" href="pour-category-themes.css">
 
-  <div class="categories-panel" flex auto>
-  
-    <core-toolbar class="category-toolbar" slide-down?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}">
-      <paper-icon-button icon="menu"></paper-icon-button>
-      <div flex class="scale-name">{{scale.name || '(not connected)'}}</div>
-      <core-icon icon="device:battery-20" title="clear" role="img"></core-button>
-      <paper-spinner class="brown" hidden></paper-spinner>
-    </core-toolbar>
-    
-    <core-selector class="category-list content {{ {wide: wide} | tokenList }}" selected="{{selected}}" tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}" fade?="{{parentElement.lastSelected === 'splash'}}">
-      
-      <div class="category-item leaderboard" vertical layout>
-        <div class="tile theme-bg-a" dummy fit></div>
-        <div class="tile" flex vertical layout>
-          <div flex relative>
-            <!-- sizing wrapper -->
-            <div fit layout vertical center center-justified>
-              <div class="category-bg-wrapper" relative>
-                <core-icon icon="category-icons:leaderboard" class="category-tile-bg" fit></core-icon>
-              </div>
-            </div>
-          </div>
-          <div class="cat-name" horizontal center layout>
-            <div flex>Leaderboard</div>
-            <core-icon class="category-icon" icon="arrow-forward"></core-icon>
-          </div>
+        <div class="categories-panel" flex auto>
+
+            <core-toolbar class="category-toolbar" slide-down?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}">
+                <paper-icon-button icon="menu" on-tap="{{menuToggle}}" hidden?="{{wide}}"></paper-icon-button>
+                <div flex class="scale-name">{{scale.name || '(not connected)'}}</div>
+                <core-icon icon="device:bluetooth-disabled" title="clear" role="img"></core-button>
+                    <paper-spinner class="brown" hidden></paper-spinner>
+            </core-toolbar>
+
+            <core-drawer-panel id="panel">
+		<div drawer>
+		    <div class="drawer-contents" flex>
+			<div center horizontal layout>
+			    <div flex>Find Scales</div>
+			    <paper-toggle-button on-change="{{toggleDiscovery}}"></paper-toggle-button>
+			</div>
+		    </div>
+		</div>
+
+		<div main>
+                <core-selector class="category-list content {{ {wide: wide} | tokenList }}" selected="{{selected}}" tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}" fade?="{{parentElement.lastSelected === 'splash'}}">
+
+                    <div class="category-item leaderboard" vertical layout>
+                        <div class="tile theme-bg-a" dummy fit></div>
+                        <div class="tile" flex vertical layout>
+                            <div flex relative>
+                                <!-- sizing wrapper -->
+                                <div fit layout vertical center center-justified>
+                                    <div class="category-bg-wrapper" relative>
+                                        <core-icon icon="category-icons:leaderboard" class="category-tile-bg" fit></core-icon>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cat-name" horizontal center layout>
+                                <div flex>Leaderboard</div>
+                                <core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                            </div>
+                        </div>
+                    </div>
+
+                    <template repeat="{{cat, i in categories}}">
+
+                        <template bind="{{allScores[cat.name] as scores}}">
+                            <div class="category-item {{cat.theme}}-theme {{ {completed: scores.length == cat.quizzes.length} | tokenList }}" vertical layout needZ?="{{category.name === cat.name}}">
+                                <div class="tile theme-bg-a" dummy fit hero-id="{{category.name === cat.name ? 'punch' : ''}}" hero?="{{category.name === cat.name}}"></div>
+                                <div class="tile" flex auto vertical layout>
+                                    <div flex auto relative>
+                                        <!-- sizing wrapper -->
+                                        <div fit layout vertical center center-justified>
+                                            <div class="category-bg-wrapper" relative>
+                                                <core-icon class="category-tile-bg {{ {'theme-icon': scores.length === cat.quizzes.length} | tokenList }}" icon="{{scores.length === cat.quizzes.length ? 'check' : 'category-icons:' + cat.id}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}" fit></core-icon>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="cat-name theme-bg" horizontal center layout hero-id="{{category.name === cat.name ? 'punch-bottom' : ''}}" hero?="{{category.name === cat.name}}">
+                                        <div flex>
+                                            <span cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}">{{cat.name}}</span>
+                                        </div>
+                                        <core-icon class="category-icon theme-bg" icon="av:play-arrow" hidden?="{{scores.length === cat.quizzes.length}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}"></core-icon>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                    </template>
+
+                    <div class="category-item profile" vertical layout>
+                        <div class="tile theme-bg-a" dummy fit></div>
+                        <div class="tile" flex auto vertical layout>
+                            <div flex auto relative>
+                                <!-- sizing wrapper -->
+                                <div fit layout vertical center center-justified>
+                                    <div class="category-bg-wrapper" relative>
+                                        <core-icon icon="category-icons:profile" class="category-tile-bg" fit></core-icon>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="cat-name" horizontal center layout>
+                                <div flex>Profile</div>
+                                <core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                    <div class="category-item polymer-logo" hidden?="{{wide}}" vertical layout>
+                        <div class="tile" fit>
+                            <core-icon icon="category-icons:polymer"></core-icon>
+                        </div>
+                    </div>
+
+                </core-selector>
+		</div>
+            </core-drawer-panel>
+
         </div>
-      </div>
-    
-      <template repeat="{{cat, i in categories}}">
-      
-        <template bind="{{allScores[cat.name] as scores}}">
-          <div class="category-item {{cat.theme}}-theme {{ {completed: scores.length == cat.quizzes.length} | tokenList }}" vertical layout needZ?="{{category.name === cat.name}}">
-            <div class="tile theme-bg-a" dummy fit hero-id="{{category.name === cat.name ? 'punch' : ''}}" hero?="{{category.name === cat.name}}"></div>
-            <div class="tile" flex auto vertical layout>
-              <div flex auto relative>
-                <!-- sizing wrapper -->
-                <div fit layout vertical center center-justified>
-                  <div class="category-bg-wrapper" relative>
-                    <core-icon class="category-tile-bg {{ {'theme-icon': scores.length === cat.quizzes.length} | tokenList }}" icon="{{scores.length === cat.quizzes.length ? 'check' : 'category-icons:' + cat.id}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}" fit></core-icon>
-                  </div>
-                </div>
-              </div>
-              <div class="cat-name theme-bg" horizontal center layout hero-id="{{category.name === cat.name ? 'punch-bottom' : ''}}" hero?="{{category.name === cat.name}}">
-                <div flex>
-                  <span cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}">{{cat.name}}</span>
-                </div>
-                <core-icon class="category-icon theme-bg" icon="av:play-arrow" hidden?="{{scores.length === cat.quizzes.length}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}"></core-icon>
-              </div>
-            </div>
-          </div>
-        </template>
-      
-      </template>
-      
-      <div class="category-item profile" vertical layout>
-        <div class="tile theme-bg-a" dummy fit></div>
-        <div class="tile" flex auto vertical layout>
-          <div flex auto relative>
-            <!-- sizing wrapper -->
-            <div fit layout vertical center center-justified>
-              <div class="category-bg-wrapper" relative>
-                <core-icon icon="category-icons:profile" class="category-tile-bg" fit></core-icon>
-              </div>
-            </div>
-          </div>
-          <div class="cat-name" horizontal center layout>
-            <div flex>Profile</div>
-            <core-icon class="category-icon" icon="arrow-forward"></core-icon>
-          </div>
-        </div>
-      </div>
-      
-      <div class="category-item polymer-logo" hidden?="{{wide}}" vertical layout>
-        <div class="tile" fit>
-          <core-icon icon="category-icons:polymer"></core-icon>
-        </div>
-      </div>
-    
-    </core-selector>
-    
-  </div>
-    
-</template>
-<script>
 
-  Polymer('pour-actions', {
-    
-    wide: false,
+    </template>
+    <script>
 
-    created: function() {
-      this.categories = [];
-    },
+    Polymer('pour-actions', {
 
-    selectedChanged: function() {
-      // first one is leaderboard, last one is profile
-      if (this.selected === 0) {
-        this.category = {name: 'leaderboard'};
-      } else if (this.selected === this.categories.length + 1) {
-        this.category = {name: 'profile'};
-      } else {
-        this.category = this.categories[this.selected - 1];
-      }
-    }
-    
-  });
+        wide: false,
 
-</script>
+        created: function() {
+            this.categories = [];
+        },
+
+	ready: function() {
+	    this.$.panel.responsiveWidth = this.rwidth;
+	},
+
+        selectedChanged: function() {
+            // first one is leaderboard, last one is profile
+            if (this.selected === 0) {
+                this.category = {name: 'leaderboard'};
+            } else if (this.selected === this.categories.length + 1) {
+                this.category = {name: 'profile'};
+            } else {
+                this.category = this.categories[this.selected - 1];
+            }
+        },
+
+	menuToggle: function() {
+	    this.$.panel.togglePanel();
+	},
+
+	toggleDiscovery: function() {
+	    console.log('toggle discovery');
+	},
+
+    });
+
+    </script>
 </polymer-element>
