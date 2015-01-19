@@ -17,7 +17,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="components/paper-spinner/paper-spinner.html">
 
-<polymer-element name="pour-actions" attributes="rwidth scale drippers beans selection wide" vertical layout>
+<polymer-element name="pour-actions" attributes="rwidth manager scale drippers beans selection wide" vertical layout>
     <template>
 
         <link rel="stylesheet" href="pour-actions.css">
@@ -33,124 +33,133 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </core-toolbar>
 
             <core-drawer-panel id="panel">
-		<div drawer>
-		    <div class="drawer-contents" flex>
-			<div center horizontal layout>
-			    <div flex>Find Scales</div>
-			    <paper-toggle-button on-change="{{toggleDiscovery}}"></paper-toggle-button>
+                <div drawer>
+                    <div class="drawer-contents" flex>
+                        <div center horizontal layout>
+                            <div flex>Scan for scales</div>
+                            <paper-toggle-button id="discoveryToggle" on-change="{{toggleDiscovery}}"></paper-toggle-button>
+                        </div>
+			<br>
+                        <div center horizontal layout>
+			    Available devices:
 			</div>
-		    </div>
-		</div>
+			<core-selector selectedAttribute="">
+			    <template repeat="{{scale, i in manager.scales}}">
+				<paper-item>n {{scale.name}}</paper-item>
+			    </template>
+			</core-selector>
+                    </div>
+                </div>
 
-		<div main>
-                <core-selector class="category-list content {{ {wide: wide} | tokenList }}" selected="{{selected}}" tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}" fade?="{{parentElement.lastSelected === 'splash'}}">
+                <div main>
+                    <core-selector class="category-list content {{ {wide: wide} | tokenList }}" selected="{{selected}}" tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}" fade?="{{parentElement.lastSelected === 'splash'}}">
 
-                    <div class="category-item leaderboard" vertical layout>
-                        <div class="tile theme-bg-a" dummy fit></div>
-                        <div class="tile" flex vertical layout>
-                            <div flex relative>
-                                <!-- sizing wrapper -->
-                                <div fit layout vertical center center-justified>
-                                    <div class="category-bg-wrapper" relative>
-                                        <core-icon icon="category-icons:leaderboard" class="category-tile-bg" fit></core-icon>
+                        <div class="category-item leaderboard" vertical layout>
+                            <div class="tile theme-bg-a" dummy fit></div>
+                            <div class="tile" flex vertical layout>
+                                <div flex relative>
+                                    <!-- sizing wrapper -->
+                                    <div fit layout vertical center center-justified>
+                                        <div class="category-bg-wrapper" relative>
+                                            <core-icon icon="category-icons:leaderboard" class="category-tile-bg" fit></core-icon>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="cat-name" horizontal center layout>
-                                <div flex>Leaderboard</div>
-                                <core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                                <div class="cat-name" horizontal center layout>
+                                    <div flex>Leaderboard</div>
+                                    <core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <template repeat="{{cat, i in categories}}">
+                        <template repeat="{{cat, i in categories}}">
 
-                        <template bind="{{allScores[cat.name] as scores}}">
-                            <div class="category-item {{cat.theme}}-theme {{ {completed: scores.length == cat.quizzes.length} | tokenList }}" vertical layout needZ?="{{category.name === cat.name}}">
-                                <div class="tile theme-bg-a" dummy fit hero-id="{{category.name === cat.name ? 'punch' : ''}}" hero?="{{category.name === cat.name}}"></div>
-                                <div class="tile" flex auto vertical layout>
-                                    <div flex auto relative>
-                                        <!-- sizing wrapper -->
-                                        <div fit layout vertical center center-justified>
-                                            <div class="category-bg-wrapper" relative>
-                                                <core-icon class="category-tile-bg {{ {'theme-icon': scores.length === cat.quizzes.length} | tokenList }}" icon="{{scores.length === cat.quizzes.length ? 'check' : 'category-icons:' + cat.id}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}" fit></core-icon>
+                            <template bind="{{allScores[cat.name] as scores}}">
+                                <div class="category-item {{cat.theme}}-theme {{ {completed: scores.length == cat.quizzes.length} | tokenList }}" vertical layout needZ?="{{category.name === cat.name}}">
+                                    <div class="tile theme-bg-a" dummy fit hero-id="{{category.name === cat.name ? 'punch' : ''}}" hero?="{{category.name === cat.name}}"></div>
+                                    <div class="tile" flex auto vertical layout>
+                                        <div flex auto relative>
+                                            <!-- sizing wrapper -->
+                                            <div fit layout vertical center center-justified>
+                                                <div class="category-bg-wrapper" relative>
+                                                    <core-icon class="category-tile-bg {{ {'theme-icon': scores.length === cat.quizzes.length} | tokenList }}" icon="{{scores.length === cat.quizzes.length ? 'check' : 'category-icons:' + cat.id}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}" fit></core-icon>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="cat-name theme-bg" horizontal center layout hero-id="{{category.name === cat.name ? 'punch-bottom' : ''}}" hero?="{{category.name === cat.name}}">
-                                        <div flex>
-                                            <span cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}">{{cat.name}}</span>
+                                        <div class="cat-name theme-bg" horizontal center layout hero-id="{{category.name === cat.name ? 'punch-bottom' : ''}}" hero?="{{category.name === cat.name}}">
+                                            <div flex>
+                                                <span cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}">{{cat.name}}</span>
+                                            </div>
+                                            <core-icon class="category-icon theme-bg" icon="av:play-arrow" hidden?="{{scores.length === cat.quizzes.length}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}"></core-icon>
                                         </div>
-                                        <core-icon class="category-icon theme-bg" icon="av:play-arrow" hidden?="{{scores.length === cat.quizzes.length}}" cross-fade-delayed?="{{category.name === cat.name && parentElement.lastSelected === 'category'}}"></core-icon>
                                     </div>
                                 </div>
-                            </div>
+                            </template>
+
                         </template>
 
-                    </template>
-
-                    <div class="category-item profile" vertical layout>
-                        <div class="tile theme-bg-a" dummy fit></div>
-                        <div class="tile" flex auto vertical layout>
-                            <div flex auto relative>
-                                <!-- sizing wrapper -->
-                                <div fit layout vertical center center-justified>
-                                    <div class="category-bg-wrapper" relative>
-                                        <core-icon icon="category-icons:profile" class="category-tile-bg" fit></core-icon>
+                        <div class="category-item profile" vertical layout>
+                            <div class="tile theme-bg-a" dummy fit></div>
+                            <div class="tile" flex auto vertical layout>
+                                <div flex auto relative>
+                                    <!-- sizing wrapper -->
+                                    <div fit layout vertical center center-justified>
+                                        <div class="category-bg-wrapper" relative>
+                                            <core-icon icon="category-icons:profile" class="category-tile-bg" fit></core-icon>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="cat-name" horizontal center layout>
+                                    <div flex>Profile</div>
+                                    <core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                                </div>
                             </div>
-                            <div class="cat-name" horizontal center layout>
-                                <div flex>Profile</div>
-                                <core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                        </div>
+
+                        <div class="category-item polymer-logo" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
+                        <div class="category-item polymer-logo" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
+                        <div class="category-item polymer-logo" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
+                        <div class="category-item polymer-logo" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
+                        <div class="category-item polymer-logo" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
+                        <div class="category-item polymer-logo" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
+                        <div class="category-item polymer-logo" hidden?="{{wide}}" vertical layout>
+                            <div class="tile" fit>
+                                <core-icon icon="category-icons:polymer"></core-icon>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="category-item polymer-logo" hidden?="{{wide}}" vertical layout>
-                        <div class="tile" fit>
-                            <core-icon icon="category-icons:polymer"></core-icon>
-                        </div>
-                    </div>
-
-                </core-selector>
-		</div>
+                    </core-selector>
+                </div>
             </core-drawer-panel>
 
         </div>
@@ -160,15 +169,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     Polymer('pour-actions', {
 
+	observe: {
+	    'manager scales': 'scalesChanged',
+	},
+
         wide: false,
 
         created: function() {
             this.categories = [];
         },
 
-	ready: function() {
-	    this.$.panel.responsiveWidth = this.rwidth;
-	},
+        ready: function() {
+            console.log('manager3: ' + this.manager);
+            this.$.panel.responsiveWidth = this.rwidth;
+        },
 
         selectedChanged: function() {
             // first one is leaderboard, last one is profile
@@ -181,13 +195,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
         },
 
-	menuToggle: function() {
-	    this.$.panel.togglePanel();
+        menuToggle: function() {
+            this.$.panel.togglePanel();
+        },
+
+	scalesChanged: function() {
+	    console.log('scales changed');
 	},
 
-	toggleDiscovery: function() {
-	    console.log('toggle discovery');
-	},
+        toggleDiscovery: function(event, detail, target) {
+            var checked = target.getAttribute('aria-pressed') === 'false';
+            if (checked) {
+                this.manager.startDiscovery();
+            } else {
+                this.manager.stopDiscovery();
+            }
+            console.log('toggle discovery: ' + checked);
+        },
 
     });
 

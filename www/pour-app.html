@@ -31,8 +31,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </div>
 
             <pour-actions id="actions" name="actions" drippers="{{drippers}}" beans="{{beans}}"
-                          selection="{{selection}}" wide="{{wide}}" rwidth="{{responsiveWidth}}"
-                          on-core-activate="{{dripperSelect}}"></pour-actions>
+			  manager="{{manager}}" selection="{{selection}}" wide="{{wide}}"
+			  rwidth="{{responsiveWidth}}" on-core-activate="{{dripperSelect}}"></pour-actions>
 
 
         </core-animated-pages>
@@ -64,6 +64,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             },
 
             ready: function() {
+		console.log('manager2: ' + this.manager);
                 this.readyTime = Date.now();
 
                 var dummyState = {app: 'pour'};
