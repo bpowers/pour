@@ -28,7 +28,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             <core-toolbar class="category-toolbar" slide-down?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}">
                 <paper-icon-button icon="menu" on-tap="{{menuToggle}}" hidden?="{{wide}}"></paper-icon-button>
                 <div flex class="scale-name">{{scale.name || '(not connected)'}}</div>
-                <core-icon icon="device:bluetooth-disabled" title="clear" role="img"></core-button>
+                <core-icon id="statusIcon" icon="device:bluetooth-disabled" title="clear" role="img"></core-button>
                     <paper-spinner class="brown" hidden></paper-spinner>
             </core-toolbar>
 
@@ -39,21 +39,23 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                             <div flex>Scan for scales</div>
                             <paper-toggle-button id="discoveryToggle" on-change="{{toggleDiscovery}}"></paper-toggle-button>
                         </div>
-			<br>
+                        <br>
                         <div center horizontal layout>
-			    Available devices:
-			</div>
-			<core-selector selectedAttribute="">
-			    <template repeat="{{scale, i in manager.scales}}">
-				<paper-item>n {{scale.name}}</paper-item>
-			    </template>
-			</core-selector>
+                            Available devices:
+                        </div>
+                        <core-selector selectedAttribute="" on-core-activate="{{selectScale}}">
+                            <template repeat="{{scale, i in manager.scales}}">
+                                <paper-item>{{scale.name}}</paper-item>
+                            </template>
+                        </core-selector>
                     </div>
                 </div>
 
                 <div main>
-                    <core-selector class="category-list content {{ {wide: wide} | tokenList }}" selected="{{selected}}" tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}" fade?="{{parentElement.lastSelected === 'splash'}}">
-
+                    <core-selector class="category-list content {{ {wide: wide} | tokenList }}"
+                                   selected="{{selected}}"
+                                   tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}"
+                                   fade?="{{parentElement.lastSelected === 'splash'}}">
                         <div class="category-item leaderboard" vertical layout>
                             <div class="tile theme-bg-a" dummy fit></div>
                             <div class="tile" flex vertical layout>
@@ -169,9 +171,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
     Polymer('pour-actions', {
 
-	observe: {
-	    'manager scales': 'scalesChanged',
-	},
+        observe: {
+            'manager.scales': 'scalesChanged',
+            'scale.connected': 'connectedChanged',
+        },
 
         wide: false,
 
@@ -195,24 +198,40 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             }
         },
 
+        selectScale: function(event, target) {
+            var off = target.item.getAttribute('tabindex');
+            console.log(off);
+            this.scale = this.manager.scales[off];
+	    console.log('connecting');
+	    this.scale.connect();
+        },
+
         menuToggle: function() {
             this.$.panel.togglePanel();
         },
 
-	scalesChanged: function() {
-	    console.log('scales changed');
-	},
+        scalesChanged: function() {
+            console.log('scales changed');
+        },
+
+        connectedChanged: function() {
+	    console.log('connected change: ' + this.scale.connected);
+            if (this.scale.connected)
+                this.$.statusIcon.setAttribute('icon', 'device:bluetooth-connected');
+        },
 
         toggleDiscovery: function(event, detail, target) {
             var checked = target.getAttribute('aria-pressed') === 'false';
             if (checked) {
+                this.$.statusIcon.setAttribute('icon', 'device:bluetooth-searching');
                 this.manager.startDiscovery();
             } else {
+                if (!this.scale)
+                    this.$.statusIcon.setAttribute('icon', 'device:bluetooth-disabled');
                 this.manager.stopDiscovery();
             }
             console.log('toggle discovery: ' + checked);
         },
-
     });
 
     </script>
