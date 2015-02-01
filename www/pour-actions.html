@@ -56,23 +56,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
                                    selected="{{selected}}"
                                    tile-cascade?="{{parentElement.selected !== 'category' && parentElement.lastSelected !== 'category'}}"
                                    fade?="{{parentElement.lastSelected === 'splash'}}">
-                        <div class="category-item leaderboard" vertical layout>
-                            <div class="tile theme-bg-a" dummy fit></div>
-                            <div class="tile" flex vertical layout>
-                                <div flex relative>
-                                    <!-- sizing wrapper -->
-                                    <div fit layout vertical center center-justified>
-                                        <div class="category-bg-wrapper" relative>
-                                            <core-icon icon="category-icons:leaderboard" class="category-tile-bg" fit></core-icon>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="cat-name" horizontal center layout>
-                                    <div flex>Leaderboard</div>
-                                    <core-icon class="category-icon" icon="arrow-forward"></core-icon>
-                                </div>
-                            </div>
-                        </div>
 
                         <template repeat="{{cat, i in categories}}">
 
@@ -100,65 +83,26 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
                         </template>
 
-                        <div class="category-item profile" vertical layout>
-                            <div class="tile theme-bg-a" dummy fit></div>
-                            <div class="tile" flex auto vertical layout>
-                                <div flex auto relative>
-                                    <!-- sizing wrapper -->
-                                    <div fit layout vertical center center-justified>
-                                        <div class="category-bg-wrapper" relative>
-                                            <core-icon icon="category-icons:profile" class="category-tile-bg" fit></core-icon>
-                                        </div>
+                        <template repeat="{{scale, i in (scale ? [scale] : [])}}">
+
+                            <div class="category-item profile" vertical layout>
+				<div class="tile theme-bg-a" dummy fit></div>
+				<div class="tile" flex auto vertical layout>
+                                    <div flex auto relative>
+					<!-- sizing wrapper -->
+					<div fit layout vertical center center-justified>
+                                            <div class="category-bg-wrapper" relative>
+						<core-icon icon="image:tune" class="category-tile-bg weigh-icon" fit></core-icon>
+                                            </div>
+					</div>
                                     </div>
-                                </div>
-                                <div class="cat-name" horizontal center layout>
-                                    <div flex>Profile</div>
-                                    <core-icon class="category-icon" icon="arrow-forward"></core-icon>
-                                </div>
+                                    <div class="cat-name" horizontal center layout>
+					<div flex>Weigh</div>
+					<core-icon class="category-icon" icon="arrow-forward"></core-icon>
+                                    </div>
+				</div>
                             </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
-
-                        <div class="category-item polymer-logo" hidden?="{{wide}}" vertical layout>
-                            <div class="tile" fit>
-                                <core-icon icon="category-icons:polymer"></core-icon>
-                            </div>
-                        </div>
+			</template>
 
                     </core-selector>
                 </div>
@@ -188,13 +132,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         selectedChanged: function() {
+	    console.log('selection changed: ' + this.selected);
             // first one is leaderboard, last one is profile
             if (this.selected === 0) {
-                this.category = {name: 'leaderboard'};
-            } else if (this.selected === this.categories.length + 1) {
-                this.category = {name: 'profile'};
+                this.selection = {name: 'weigh'};
             } else {
-                this.category = this.categories[this.selected - 1];
+                this.selection = this.categories[this.selected - 1];
             }
         },
 

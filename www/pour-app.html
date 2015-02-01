@@ -18,8 +18,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="components/core-animated-pages/transitions/tile-cascade.html">
 <link rel="import" href="components/core-media-query/core-media-query.html">
 <link rel="import" href="pour-actions.html">
+<link rel="import" href="pour-weigh.html">
 
-<polymer-element name="pour-app" attributes="selected manager drippers beans" vertical layout>
+<polymer-element name="pour-app" attributes="selected manager drippers beans scale" vertical layout>
     <template>
 
         <link rel="stylesheet" href="pour-app.css">
@@ -31,8 +32,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             </div>
 
             <pour-actions id="actions" name="actions" drippers="{{drippers}}" beans="{{beans}}"
-			  manager="{{manager}}" selection="{{selection}}" wide="{{wide}}"
+			  manager="{{manager}}" selection="{{selection}}" wide="{{wide}}" scale="{{scale}}"
 			  rwidth="{{responsiveWidth}}" on-core-activate="{{dripperSelect}}"></pour-actions>
+
+	    <pour-weigh id="weigh" name="weigh" scale="{{scale}}" wide="{{wide}}"></topeka-category>
+      
 
 
         </core-animated-pages>
@@ -90,11 +94,11 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
             },
 
 	    dripperSelect: function() {
-		console.log('dripperSelect');
+		console.log('dripperSelect: ' + (this.selection && this.selection.name));
 		if (this.selection) {
 		    var n = this.selection.name;
-		    if (n === 'leaderboard') {
-			this.showLeaderboard();
+		    if (n === 'weigh') {
+			this.showWeigh();
 		    } else if (n === 'profile') {
 			this.showProfile();
 		    } else {
@@ -117,6 +121,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
             showLeaderboard: function() {
                 this.selected = 'leaderboard';
+            },
+
+            showWeigh: function() {
+                this.selected = 'weigh';
             },
 
             showProfile: function() {

@@ -1,0 +1,96 @@
+<!--
+Copyright (c) 2014 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="pour-weigh-front-page.html">
+<link rel="import" href="components/core-animated-pages/core-animated-pages.html">
+<link rel="import" href="components/core-animated-pages/transitions/slide-up.html">
+<link rel="import" href="components/core-animated-pages/transitions/slide-down.html">
+
+<polymer-element name="pour-weigh" attributes="scale selected wide" vertical layout>
+    <template>
+
+        <link rel="stylesheet" href="pour-weigh.css">
+        <link rel="stylesheet" href="pour-weigh-themes.css">
+
+        <div class="{{category.theme}}-theme theme-bg-a {{ {wide: wide} | tokenList }}" dummy fit layout vertical center center-justified hero-id="punch" hero>
+            <div class="category-bg" relative?="{{wide}}" flex?="{{!wide}}">
+                <core-icon icon="category-images:{{category.id}}" cross-fade-delayed?="{{parentElement.selected === 'category'}}" cross-fade="{{parentElement.selected !== 'category'}}" fit></core-icon>
+            </div>
+        </div>
+
+        <div class="{{category.theme}}-theme {{ {wide: wide} | tokenList }}" flex vertical layout>
+
+            <core-animated-pages class="category-pages" selected="{{selected}}" selectedItem="{{selectedItem}}" flex transitions="cross-fade cross-fade-delayed slide-up slide-down hero-transition" no-transition?="{{selected === 'front'}}" on-core-animated-pages-transition-end="{{transitionEnd}}">
+
+                <section name="empty"></section>
+
+                <pour-weigh-front-page name="front" scale="{{scale}}" wide="{{wide}}" on-previous="{{mainAction}}"></topeka-category-front-page>
+
+            </core-animated-pages>
+
+            <paper-icon-button class="main-button {{ {'theme-color': !wide && selected == 'quizzes'} | tokenList }}" icon="arrow-back" on-tap="{{mainAction}}" hero?="{{parentElement.selected === 'categories'}}" cross-fade-delayed></paper-icon-button>
+
+        </div>
+
+    </template>
+    <script>
+
+    Polymer('pour-weigh', {
+
+        selected: 'front',
+        selectedItem: null,
+        wide: false,
+
+        computed: {
+        },
+
+        created: function() {
+        },
+
+        transitionEnd: function() {
+            if (this.selected === 'quizScore') {
+
+                // Delay switching questions so we don't see the new question
+                // before the transition to the score card, and so we're not
+                // switching questions when a transition is running.
+                                  this.$.quizzes.next();
+
+                this.async(function() {
+                    if (this.scores.length === this.category.quizzes.length) {
+                        this.selected = 'results';
+                    } else {
+                        this.showQuizzes();
+                    }
+                }, null, parseInt(CoreStyle.g.transitions.duration));
+
+            } else if (this.selected === 'empty') {
+                this.selected = 'front';
+                this.fire('main');
+            }
+        },
+
+        showQuizzes: function() {
+            this.selected = 'quizzes';
+        },
+
+        showScore: function() {
+            this.selected = 'score';
+        },
+
+        mainAction: function() {
+            if (this.selected !== 'front') {
+                this.selected = 'empty';
+            } else {
+                this.fire('main');
+            }
+        },
+    });
+
+    </script>
+</polymer-element>
