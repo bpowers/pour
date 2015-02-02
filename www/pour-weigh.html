@@ -18,13 +18,13 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <link rel="stylesheet" href="pour-weigh.css">
         <link rel="stylesheet" href="pour-weigh-themes.css">
 
-        <div class="{{category.theme}}-theme theme-bg-a {{ {wide: wide} | tokenList }}" dummy fit layout vertical center center-justified hero-id="punch" hero>
+        <div class="red-theme theme-bg-a {{ {wide: wide} | tokenList }}" dummy fit layout vertical center center-justified hero-id="punch" hero>
             <div class="category-bg" relative?="{{wide}}" flex?="{{!wide}}">
                 <core-icon icon="category-images:{{category.id}}" cross-fade-delayed?="{{parentElement.selected === 'category'}}" cross-fade="{{parentElement.selected !== 'category'}}" fit></core-icon>
             </div>
         </div>
 
-        <div class="{{category.theme}}-theme {{ {wide: wide} | tokenList }}" flex vertical layout>
+        <div class="red-theme {{ {wide: wide} | tokenList }}" flex vertical layout>
 
             <core-animated-pages class="category-pages" selected="{{selected}}" selectedItem="{{selectedItem}}" flex transitions="cross-fade cross-fade-delayed slide-up slide-down hero-transition" no-transition?="{{selected === 'front'}}" on-core-animated-pages-transition-end="{{transitionEnd}}">
 

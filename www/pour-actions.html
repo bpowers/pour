@@ -127,7 +127,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         ready: function() {
-            console.log('manager3: ' + this.manager);
             this.$.panel.responsiveWidth = this.rwidth;
         },
 
@@ -154,7 +153,9 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         },
 
         scalesChanged: function() {
-            console.log('scales changed');
+            console.log('scales changed:');
+	    if (this.manager)
+	        console.log(this.manager.scales);
         },
 
         connectedChanged: function() {

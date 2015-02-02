@@ -1,6 +1,6 @@
 {
   "name": "btscale",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "description": "access Bluetooth LE scales from Javascript",
   "homepage": "https://github.com/bpowers/btscale",
   "authors": [
@@ -23,14 +23,13 @@
   "devDependencies": {
     "almond": "~0.3.0"
   },
-  "_release": "0.1.2",
+  "_release": "0.1.4",
   "_resolution": {
     "type": "version",
-    "tag": "v0.1.2",
-    "commit": "d56112abbc9f1ceb22e443704d8983cac1080ebe"
+    "tag": "v0.1.4",
+    "commit": "82a0d906fe8e117c2f3423c3ebfcf9dad93bc955"
   },
   "_source": "git://github.com/bpowers/btscale.git",
-  "_target": "0.1.2",
-  "_originalSource": "btscale",
-  "_direct": true
+  "_target": "0.1.4",
+  "_originalSource": "btscale"
 }
